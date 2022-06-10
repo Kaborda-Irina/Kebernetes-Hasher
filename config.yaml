@@ -1,0 +1,12 @@
+#Database credentials
+postgres:
+  uri: "postgres://user:1234@localhost:5432/hashdb?sslmode=disable"
+  username: user
+  password: 1234
+  database_name: hashdb
+#Server configurations
+port: "9090"
+#Logger credentials
+logger:
+  level: 5
+  logfile:
