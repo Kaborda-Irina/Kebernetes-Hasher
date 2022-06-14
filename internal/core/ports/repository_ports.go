@@ -10,7 +10,9 @@ import (
 
 //go:generate mockgen -source=repository_ports.go -destination=mocks/mock_repository.go
 
-type IAppRepository interface{}
+type IAppRepository interface {
+	CheckIsEmptyDB() (bool, error)
+}
 
 type IHashRepository interface {
 	SaveHashData(ctx context.Context, allHashData []api.HashData) error

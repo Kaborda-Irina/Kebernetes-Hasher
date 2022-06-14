@@ -15,10 +15,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const countWorkers = 4
-
 type AppService struct {
 	ports.IHashService
+	ports.IAppRepository
 	logger *logrus.Logger
 }
 
@@ -30,18 +29,32 @@ func NewAppService(r *repositories.AppRepository, algorithm string, logger *logr
 		return nil, err
 	}
 	return &AppService{
-		IHashService: IHashService,
-		logger:       logger,
+		IHashService:   IHashService,
+		IAppRepository: r,
+		logger:         logger,
 	}, nil
+}
+func (as *AppService) LaunchHasher(ctx context.Context, flagName string, sig chan os.Signal) []api.HashData {
+	jobs := make(chan string)
+	results := make(chan api.HashData)
+	go as.IHashService.WorkerPool(ctx, jobs, results, as.logger)
+	go api.SearchFilePath(ctx, flagName, jobs, as.logger)
+	allHashData := api.Result(ctx, results, sig)
+
+	return allHashData
+}
+
+func (as *AppService) CheckIsEmptyDB() bool {
+	isEmptyDB, err := as.IAppRepository.CheckIsEmptyDB()
+	if err != nil {
+		as.logger.Fatalf("error while saving data to db %s", err)
+	}
+	return isEmptyDB
 }
 
 // StartGetHashData getting the hash sum of all files, outputs to os.Stdout and saves to the database
 func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Signal) error {
-	jobs := make(chan string)
-	results := make(chan api.HashData)
-	go as.IHashService.WorkerPool(ctx, countWorkers, jobs, results, as.logger)
-	go api.SearchFilePath(ctx, flagName, jobs, as.logger)
-	allHashData := api.Result(ctx, results, sig)
+	allHashData := as.LaunchHasher(ctx, flagName, sig)
 	err := as.IHashService.SaveHashData(ctx, allHashData)
 	if err != nil {
 		as.logger.Error("Error save hash data to database ", err)
@@ -52,11 +65,7 @@ func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Si
 
 // StartCheckHashData getting the hash sum of all files, matches them and outputs to os.Stdout changes
 func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName string, sig chan os.Signal) error {
-	jobs := make(chan string)
-	results := make(chan api.HashData)
-	go as.IHashService.WorkerPool(ctx, countWorkers, jobs, results, as.logger)
-	go api.SearchFilePath(ctx, flagName, jobs, as.logger)
-	allHashDataCurrent := api.Result(ctx, results, sig)
+	allHashDataCurrent := as.LaunchHasher(ctx, flagName, sig)
 	allHashDataFromDB, err := as.IHashService.GetHashSum(ctx, flagName)
 	if err != nil {
 		as.logger.Error("Error getting hash data from database ", err)

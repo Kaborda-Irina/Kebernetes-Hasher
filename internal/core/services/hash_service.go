@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/consts"
@@ -36,6 +37,29 @@ func NewHashService(hashRepository ports.IHashRepository, alg string, logger *lo
 		alg:            alg,
 		logger:         logger,
 	}, nil
+}
+
+// WorkerPool launches a certain number of workers for concurrent processing
+func (hs HashService) WorkerPool(ctx context.Context, jobs chan string, results chan api.HashData, logger *logrus.Logger) {
+	ctx, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
+	defer cancel()
+	var wg sync.WaitGroup
+	for w := 1; w <= consts.CountWorkers; w++ {
+		wg.Add(1)
+		go hs.Worker(ctx, &wg, jobs, results, logger)
+	}
+	defer close(results)
+	wg.Wait()
+}
+
+// Worker gets jobs from a pipe and writes the result to stdout and database
+func (hs HashService) Worker(ctx context.Context, wg *sync.WaitGroup, jobs <-chan string, results chan<- api.HashData, _ *logrus.Logger) {
+	_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
+	defer cancel()
+	defer wg.Done()
+	for j := range jobs {
+		results <- hs.CreateHash(j)
+	}
 }
 
 // CreateHash creates a new object with a hash sum
