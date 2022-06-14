@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-webapp
+  name: nginx-webapp-dep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-webapp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nginx-webapp
+    spec:
+      shareProcessNamespace: true
+      containers:
+        - name: nginx
+          image: nginx
+          stdin: true
+          tty: true
+          volumeMounts:
+            - mountPath: /etc/nginx/data
+              name: nginx-persistent-storage
+
+        - name: hasher-container
+          image: upgrade:latest
+          imagePullPolicy: Never
+          envFrom:
+            - secretRef:
+                name: postgres-kuber-hasher-secret
+          command: [ "sh","-c","pid=$(pidof -s $PID_NAME);echo $pid; ./sha256sum -d ../proc/$pid/root/etc/nginx/data;"]
+          #command: [ "sh","-c","sleep 30 ; ps ax", "head /proc/7/root/etc/nginx/nginx.conf; sleep 60" ]
+          #command: [ "sh","-c","./sha256sum $FLAG_D $TEXT; sleep 600" ]
+          env:
+            - name: PID_NAME
+              value: "nginx"
+            - name: PID
+              value: "PID=$(pidof -s $PID_NAME)"
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                 fieldPath: spec.nodeName
+#          resources:
+#            limits:
+#              cpu: "1"
+#              memory: "512Mi"
+#          livenessProbe:
+#            exec:
+#              command: [ "sh","-c","./sha256sum -l" ]
+#            initialDelaySeconds: 2
+#            periodSeconds: 30
+#            failureThreshold: 1
+#            successThreshold: 1
+#            timeoutSeconds: 10
+          securityContext:
+            capabilities:
+              add:
+                - SYS_PTRACE
+          stdin: true
+          tty: true
+      volumes:
+        - name: nginx-persistent-storage
+          persistentVolumeClaim:
+            claimName: nginx-persistent-volume-claim

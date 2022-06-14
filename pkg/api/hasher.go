@@ -43,29 +43,10 @@ func Result(ctx context.Context, results chan HashData, c chan os.Signal) []Hash
 			if !ok {
 				return allHashData
 			}
-			fmt.Printf("%s %s\n", hashData.Hash, hashData.FileName)
 			allHashData = append(allHashData, hashData)
 		case <-c:
 			fmt.Println("exit program")
 			return []HashData{}
-		case <-ctx.Done():
-		}
-	}
-}
-
-// ResultForCheck launching an infinite loop of receiving and return all hash sum
-func ResultForCheck(ctx context.Context, results chan HashData, c chan os.Signal) []HashData {
-	var allHashData []HashData
-	for {
-		select {
-		case hashData, ok := <-results:
-			if !ok {
-				return allHashData
-			}
-			allHashData = append(allHashData, hashData)
-		case <-c:
-			fmt.Println("exit program")
-			return nil
 		case <-ctx.Done():
 		}
 	}

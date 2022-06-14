@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp:
+  name: special-config
+  namespace: default
+  labels:
+    app: nginx-webapp
+data:
+
+  PID_NAME: "nginx"
+  POD_NAME: sidecar-pod
+  NAME_IMAGE_TAG: "upgrade:latest"
+
+

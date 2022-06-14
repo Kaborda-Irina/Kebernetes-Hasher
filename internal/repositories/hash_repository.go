@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const nameTable = "hashFiles"
+const nameTable = "hashfiles"
 
 type HashRepository struct {
 	db     *sql.DB
@@ -30,18 +30,18 @@ func NewHashRepository(db *sql.DB, logger *logrus.Logger) *HashRepository {
 
 // SaveHashData iterates through all elements of the slice and triggers the save to database function
 func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.HashData) error {
-	_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
-	defer cancel()
+	//_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
+	//defer cancel()
 
 	tx, err := hr.db.Begin()
 	if err != nil {
-		hr.logger.Error(err)
+		hr.logger.Error("err while saving data in db ", err)
 		return err
 	}
 	query := fmt.Sprintf(`
-		INSERT INTO hashFiles (fileName,fullFilePath,hashSum,algorithm) 
-		VALUES($1,$2,$3,$4) ON CONFLICT (fullFilePath,algorithm) 
-		DO UPDATE SET hashSum=EXCLUDED.hashSum`)
+		INSERT INTO hashfiles (file_name,full_file_path,hash_sum,algorithm) 
+		VALUES($1,$2,$3,$4) ON CONFLICT (full_file_path,algorithm) 
+		DO UPDATE SET hash_sum=EXCLUDED.hash_sum`)
 
 	for _, hash := range allHashData {
 		_, err = tx.Exec(query, hash.FileName, hash.FullFilePath, hash.Hash, hash.Algorithm)
@@ -50,7 +50,7 @@ func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.Has
 			if err != nil {
 				return err
 			}
-			hr.logger.Error(err)
+			hr.logger.Error("err in Rollback", err)
 			return err
 		}
 	}
@@ -65,7 +65,7 @@ func (hr HashRepository) GetHashSum(ctx context.Context, dirFiles, algorithm str
 
 	var allHashDataFromDB []models.HashDataFromDB
 
-	query := fmt.Sprintf("SELECT id,fileName,fullFilePath,hashSum,algorithm FROM %s WHERE fullFilePath LIKE $1 and algorithm=$2", nameTable)
+	query := fmt.Sprintf("SELECT id,file_name,full_file_path,hash_sum,algorithm FROM %s WHERE full_file_path LIKE $1 and algorithm=$2", nameTable)
 
 	rows, err := hr.db.Query(query, "%"+dirFiles+"%", algorithm)
 	if err != nil {
@@ -93,7 +93,7 @@ func (hr HashRepository) UpdateDeletedItems(deletedItems []models.DeletedHashes)
 		return err
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET deleted = true WHERE fullFilePath=$1 AND algorithm=$2", nameTable)
+	query := fmt.Sprintf("UPDATE %s SET deleted = true WHERE full_file_path=$1 AND algorithm=$2", nameTable)
 
 	for _, item := range deletedItems {
 		_, err := tx.Exec(query, item.FilePath, item.Algorithm)

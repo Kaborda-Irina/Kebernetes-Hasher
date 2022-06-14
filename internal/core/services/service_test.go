@@ -51,7 +51,7 @@ func TestStartGetHashData(t *testing.T) {
 
 			testCase.mockBehavior(s, ctx, testCase.flagName, jobs, results, sig)
 
-			err := s.StartGetHashData(ctx, testCase.flagName, jobs, results, sig)
+			err := s.Start(ctx, testCase.flagName, jobs, results, sig)
 			if testCase.expectedErr {
 				assert.Error(t, err)
 			} else {
@@ -108,7 +108,7 @@ func TestStartCheckHashData(t *testing.T) {
 
 			testCase.mockBehavior(s, ctx, testCase.flagName, jobs, results, sig)
 
-			err := s.StartCheckHashData(ctx, testCase.flagName, jobs, results, sig)
+			err := s.Check(ctx, testCase.flagName, jobs, results, sig)
 			if testCase.expectedErr {
 				assert.Error(t, err)
 			} else {

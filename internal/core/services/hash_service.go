@@ -88,7 +88,9 @@ func (hs HashService) GetHashSum(ctx context.Context, dirFiles string) ([]models
 }
 
 // ChangedHashes checks if the current data has changed with the data stored in the database
-func (hs HashService) ChangedHashes(currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB) error {
+func (hs HashService) ChangedHashes(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB) error {
+	_, cancel := context.WithCancel(ctx)
+
 	var deletedResult []models.DeletedHashes
 	var trigger bool
 	var count int
@@ -101,6 +103,10 @@ func (hs HashService) ChangedHashes(currentHashData []api.HashData, hashSumFromD
 					count++
 					fmt.Printf("Changed: file - %s the path %s, old hash sum %s, new hash sum %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash, dataCurrent.Hash)
+					ticker.Stop()
+					cancel()
+					os.Exit(1)
+
 				}
 				trigger = true
 				break
@@ -117,6 +123,9 @@ func (hs HashService) ChangedHashes(currentHashData []api.HashData, hashSumFromD
 				OldChecksum: dataFromDB.Hash,
 				Algorithm:   dataFromDB.Algorithm,
 			})
+			ticker.Stop()
+			cancel()
+
 		}
 	}
 

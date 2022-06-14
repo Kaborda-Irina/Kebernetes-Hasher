@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"time"
 
 	"os"
 	"strings"
@@ -35,7 +36,9 @@ func NewAppService(r *repositories.AppRepository, algorithm string, logger *logr
 }
 
 // StartGetHashData getting the hash sum of all files, outputs to os.Stdout and saves to the database
-func (as *AppService) StartGetHashData(ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error {
+func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Signal) error {
+	jobs := make(chan string)
+	results := make(chan api.HashData)
 	go as.IHashService.WorkerPool(ctx, countWorkers, jobs, results, as.logger)
 	go api.SearchFilePath(ctx, flagName, jobs, as.logger)
 	allHashData := api.Result(ctx, results, sig)
@@ -48,16 +51,18 @@ func (as *AppService) StartGetHashData(ctx context.Context, flagName string, job
 }
 
 // StartCheckHashData getting the hash sum of all files, matches them and outputs to os.Stdout changes
-func (as *AppService) StartCheckHashData(ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error {
+func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName string, sig chan os.Signal) error {
+	jobs := make(chan string)
+	results := make(chan api.HashData)
 	go as.IHashService.WorkerPool(ctx, countWorkers, jobs, results, as.logger)
 	go api.SearchFilePath(ctx, flagName, jobs, as.logger)
-	allHashDataCurrent := api.ResultForCheck(ctx, results, sig)
+	allHashDataCurrent := api.Result(ctx, results, sig)
 	allHashDataFromDB, err := as.IHashService.GetHashSum(ctx, flagName)
 	if err != nil {
 		as.logger.Error("Error getting hash data from database ", err)
 		return err
 	}
-	err = as.IHashService.ChangedHashes(allHashDataCurrent, allHashDataFromDB)
+	err = as.IHashService.ChangedHashes(ctx, ticker, allHashDataCurrent, allHashDataFromDB)
 	if err != nil {
 		as.logger.Error("Error match data currently and data from db ", err)
 		return err

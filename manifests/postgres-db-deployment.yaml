@@ -36,7 +36,9 @@ spec:
                 time_of_creation  TIMESTAMP,
                 time_state        TIMESTAMP,
                 name_container    TEXT,
-                tag               TEXT
+                tag               TEXT,
+                tag1 TEXT,
+                CONSTRAINT files_unique UNIQUE (full_file_path, algorithm)
                 );'" ]
 
           envFrom:                                # Get the environmental variables from a secret file whose name is "postgres-secret"

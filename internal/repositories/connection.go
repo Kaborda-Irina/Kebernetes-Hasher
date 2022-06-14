@@ -6,7 +6,6 @@ import (
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	"log"
 )
 
 func InitializeDB(connectionDB models.ConnectionDB, logger *logrus.Logger) (*sql.DB, error) {
@@ -14,10 +13,10 @@ func InitializeDB(connectionDB models.ConnectionDB, logger *logrus.Logger) (*sql
 
 	db, err := sql.Open(connectionDB.Dbdriver, DBURL)
 	if err != nil {
-		fmt.Printf("Cannot connect to %s database ", connectionDB.Dbdriver)
-		log.Fatal("This is the error:", err)
+		logger.Info("Cannot connect to %s database ", connectionDB.Dbdriver)
+		logger.Fatal("This is the error:", err)
 	} else {
-		fmt.Printf("We are connected to the %s database ", connectionDB.Dbdriver)
+		logger.Info("Connected to the database ", connectionDB.Dbdriver)
 	}
 
 	//ticker := time.NewTicker(5 * time.Second)

@@ -3,6 +3,7 @@ package hasher
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 )
 
@@ -18,6 +19,7 @@ func (a *SHA256) Hash(file io.Reader) (string, error) {
 
 	_, err := io.Copy(hash, file)
 	if err != nil {
+		fmt.Printf("err in hash copy %s", err)
 		return "", err
 	}
 

@@ -2,22 +2,22 @@ package initialize
 
 import (
 	"context"
-	"flag"
+	"database/sql"
 	"fmt"
-	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
-	"os"
-
 	config "github.com/Kaborda-Irina/Kubernetes-Hasher/internal/configs"
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/services"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/repositories"
-	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
-
 	"github.com/sirupsen/logrus"
+	"log"
+	"os"
+	"sync"
+	"time"
 )
 
-func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, sig chan os.Signal, doHelp bool, dirPath, algorithm, checkHashSumFile string) {
+func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, sig chan os.Signal, dirPath, algorithm string) {
 	// InitializeDB PostgreSQL
-	logger.Info("Starting db connection")
+	logger.Info("Starting database connection")
 	connectionDB := models.ConnectionDB{
 		Dbdriver:   os.Getenv("DB_DRIVER"),
 		DbUser:     os.Getenv("DB_USER"),
@@ -29,9 +29,7 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 
 	db, err := repositories.InitializeDB(connectionDB, logger)
 	if err != nil {
-		logger.Error("Failed to connection to Postgres", err)
-	} else {
-		logger.Info("Postgres connection is successful")
+		logger.Error("Failed to connection to db", err)
 	}
 
 	// InitializeDB repository
@@ -43,47 +41,47 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 		logger.Fatalf("can't init service: %s", err)
 	}
 
-	jobs := make(chan string)
-	results := make(chan api.HashData)
+	fmt.Println(IsEmptyDB(db))
+	ticker := time.NewTicker(5 * time.Second)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(ctx context.Context) {
+		defer wg.Done()
+		for {
+			if IsEmptyDB(db) {
+				err := service.Start(ctx, dirPath, sig)
+				if err != nil {
+					logger.Error("Error when starting to get hash data ", err)
+					return
+				}
+			} else {
+				fmt.Println("not empty")
+				for range ticker.C {
+					err := service.Check(ctx, ticker, dirPath, sig)
+					if err != nil {
+						logger.Error("Error when starting to check hash data ", err)
+						os.Exit(1)
+					}
+				}
+			}
 
-	// server
-	//newServer := server.NewServer(db)
-	//newServer.InitializeDB(cfg)
+		}
+	}(ctx)
 
-	switch {
-	// InitializeDB custom -h flag
-	case doHelp:
-		customHelpFlag()
-		return
-	// InitializeDB custom -d flag
-	case len(dirPath) > 0:
-		err := service.StartGetHashData(ctx, dirPath, jobs, results, sig)
-		if err != nil {
-			logger.Error("Error when starting to get hash data ", err)
-			return
-		}
-		return
-	// InitializeDB custom -c flag
-	case len(checkHashSumFile) > 0:
-		err := service.StartCheckHashData(ctx, checkHashSumFile, jobs, results, sig)
-		if err != nil {
-			logger.Error("Error when starting to check hash data ", err)
-			return
-		}
-		return
-	// If the user has not entered a flag
-	default:
-		logger.Println("use the -h flag on the command line to see all the flags in this app")
-	}
+	wg.Wait()
+	fmt.Println("Ticker stopped")
 }
 
-func customHelpFlag() {
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Custom help %s:\nYou can use the following flag:\n", os.Args[0])
-
-		flag.VisitAll(func(f *flag.Flag) {
-			fmt.Fprintf(os.Stderr, "  flag -%v \n       %v\n", f.Name, f.Usage)
-		})
+func IsEmptyDB(db *sql.DB) bool {
+	var count int
+	row := db.QueryRow("SELECT COUNT(*) FROM hashfiles LIMIT 1")
+	err := row.Scan(&count)
+	if err != nil {
+		log.Fatal(err)
 	}
-	flag.Usage()
+
+	if count < 1 {
+		return true
+	}
+	return false
 }

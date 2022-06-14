@@ -40,9 +40,9 @@ func (m *MockIAppService) EXPECT() *MockIAppServiceMockRecorder {
 }
 
 // StartCheckHashData mocks base method.
-func (m *MockIAppService) StartCheckHashData(ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error {
+func (m *MockIAppService) Check(ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartCheckHashData", ctx, flagName, jobs, results, sig)
+	ret := m.ctrl.Call(m, "Check", ctx, flagName, jobs, results, sig)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -50,13 +50,13 @@ func (m *MockIAppService) StartCheckHashData(ctx context.Context, flagName strin
 // StartCheckHashData indicates an expected call of StartCheckHashData.
 func (mr *MockIAppServiceMockRecorder) StartCheckHashData(ctx, flagName, jobs, results, sig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartCheckHashData", reflect.TypeOf((*MockIAppService)(nil).StartCheckHashData), ctx, flagName, jobs, results, sig)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Check", reflect.TypeOf((*MockIAppService)(nil).Check), ctx, flagName, jobs, results, sig)
 }
 
 // StartGetHashData mocks base method.
-func (m *MockIAppService) StartGetHashData(ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error {
+func (m *MockIAppService) Start(ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartGetHashData", ctx, flagName, jobs, results, sig)
+	ret := m.ctrl.Call(m, "Start", ctx, flagName, jobs, results, sig)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -64,7 +64,7 @@ func (m *MockIAppService) StartGetHashData(ctx context.Context, flagName string,
 // StartGetHashData indicates an expected call of StartGetHashData.
 func (mr *MockIAppServiceMockRecorder) StartGetHashData(ctx, flagName, jobs, results, sig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartGetHashData", reflect.TypeOf((*MockIAppService)(nil).StartGetHashData), ctx, flagName, jobs, results, sig)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockIAppService)(nil).Start), ctx, flagName, jobs, results, sig)
 }
 
 // MockIHashService is a mock of IHashService interface.
