@@ -110,3 +110,12 @@ func (hr HashRepository) UpdateDeletedItems(deletedItems []models.DeletedHashes)
 
 	return tx.Commit()
 }
+
+func (hr HashRepository) DeleteAllRowsDB() error {
+	_, err := hr.db.Query("DELETE FROM hashfiles;")
+	if err != nil {
+		hr.logger.Error("err while deleting rows in db", err)
+		return err
+	}
+	return nil
+}

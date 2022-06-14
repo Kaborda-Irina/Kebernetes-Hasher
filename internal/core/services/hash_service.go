@@ -95,6 +95,25 @@ func (hs HashService) ChangedHashes(ctx context.Context, ticker *time.Ticker, cu
 	var trigger bool
 	var count int
 
+	trigger, count, deletedResult = matchwithDataDB(hashSumFromDB, trigger, currentHashData, count, hs, ticker, cancel, deletedResult)
+
+	count = matchWithDataCurrent(currentHashData, trigger, hashSumFromDB, count)
+
+	if len(deletedResult) > 0 {
+		err := hs.hashRepository.UpdateDeletedItems(deletedResult)
+		if err != nil {
+			hs.logger.Error(err)
+			return err
+		}
+	}
+
+	if count == 0 {
+		fmt.Println("Files have not been changed, added or removed")
+	}
+	return nil
+}
+
+func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, trigger bool, currentHashData []api.HashData, count int, hs HashService, ticker *time.Ticker, cancel context.CancelFunc, deletedResult []models.DeletedHashes) (bool, int, []models.DeletedHashes) {
 	for _, dataFromDB := range hashSumFromDB {
 		trigger = false
 		for _, dataCurrent := range currentHashData {
@@ -103,9 +122,10 @@ func (hs HashService) ChangedHashes(ctx context.Context, ticker *time.Ticker, cu
 					count++
 					fmt.Printf("Changed: file - %s the path %s, old hash sum %s, new hash sum %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash, dataCurrent.Hash)
+					hs.hashRepository.DeleteAllRowsDB()
 					ticker.Stop()
 					cancel()
-					os.Exit(1)
+					os.Exit(2)
 
 				}
 				trigger = true
@@ -115,20 +135,23 @@ func (hs HashService) ChangedHashes(ctx context.Context, ticker *time.Ticker, cu
 
 		if !trigger {
 			count++
-			fmt.Printf("Deleted: file - %s the path %s hash sum %s\n",
-				dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash)
+			fmt.Printf("Deleted: file - %s the path %s hash sum %s\n", dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash)
 			deletedResult = append(deletedResult, models.DeletedHashes{
 				FileName:    dataFromDB.FileName,
 				FilePath:    dataFromDB.FullFilePath,
 				OldChecksum: dataFromDB.Hash,
 				Algorithm:   dataFromDB.Algorithm,
 			})
+			hs.hashRepository.DeleteAllRowsDB()
 			ticker.Stop()
 			cancel()
-
+			os.Exit(2)
 		}
 	}
+	return trigger, count, deletedResult
+}
 
+func matchWithDataCurrent(currentHashData []api.HashData, trigger bool, hashSumFromDB []models.HashDataFromDB, count int) int {
 	for _, dataCurrent := range currentHashData {
 		trigger = false
 		for _, dataFromDB := range hashSumFromDB {
@@ -144,17 +167,5 @@ func (hs HashService) ChangedHashes(ctx context.Context, ticker *time.Ticker, cu
 				dataCurrent.FileName, dataCurrent.FullFilePath, dataCurrent.Hash)
 		}
 	}
-
-	if len(deletedResult) > 0 {
-		err := hs.hashRepository.UpdateDeletedItems(deletedResult)
-		if err != nil {
-			hs.logger.Error(err)
-			return err
-		}
-	}
-
-	if count == 0 {
-		fmt.Println("Files have not been changed, added or removed")
-	}
-	return nil
+	return count
 }
