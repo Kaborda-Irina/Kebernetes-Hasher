@@ -111,46 +111,45 @@ func (hs HashService) GetHashSum(ctx context.Context, dirFiles string) ([]models
 	return hash, nil
 }
 
-// ChangedHashes checks if the current data has changed with the data stored in the database
-func (hs HashService) ChangedHashes(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB) error {
-	_, cancel := context.WithCancel(ctx)
-
-	var deletedResult []models.DeletedHashes
-	var trigger bool
-	var count int
-
-	trigger, count, deletedResult = matchwithDataDB(hashSumFromDB, trigger, currentHashData, count, hs, ticker, cancel, deletedResult)
-
-	count = matchWithDataCurrent(currentHashData, trigger, hashSumFromDB, count)
-
-	if len(deletedResult) > 0 {
-		err := hs.hashRepository.UpdateDeletedItems(deletedResult)
-		if err != nil {
-			hs.logger.Error(err)
-			return err
-		}
-	}
-
-	if count == 0 {
-		fmt.Println("Files have not been changed, added or removed")
+func (hs HashService) DeleteAllRowsDB() error {
+	err := hs.hashRepository.DeleteAllRowsDB()
+	if err != nil {
+		hs.logger.Error("err while deleting rows in db", err)
+		return err
 	}
 	return nil
 }
 
-func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, trigger bool, currentHashData []api.HashData, count int, hs HashService, ticker *time.Ticker, cancel context.CancelFunc, deletedResult []models.DeletedHashes) (bool, int, []models.DeletedHashes) {
+// ChangedHashes checks if the current data has changed with the data stored in the database
+func (hs HashService) IsDataChanged(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB) (bool, error) {
+	var deletedResult []models.DeletedHashes
+
+	isDataChanged, deletedResult := matchwithDataDB(hashDataFromDB, currentHashData, ticker, deletedResult)
+	isAddFiles := matchWithDataCurrent(currentHashData, hashDataFromDB, ticker)
+
+	//if len(deletedResult) > 0 {
+	//	err := hs.hashRepository.UpdateDeletedItems(deletedResult)
+	//	if err != nil {
+	//		hs.logger.Error(err)
+	//		return false, err
+	//	}
+	//}
+	if isDataChanged || isAddFiles {
+		return true, nil
+	}
+	return false, nil
+}
+
+func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []api.HashData, ticker *time.Ticker, deletedResult []models.DeletedHashes) (bool, []models.DeletedHashes) {
 	for _, dataFromDB := range hashSumFromDB {
-		trigger = false
+		trigger := false
 		for _, dataCurrent := range currentHashData {
 			if dataFromDB.FullFilePath == dataCurrent.FullFilePath {
 				if dataFromDB.Hash != dataCurrent.Hash {
-					count++
 					fmt.Printf("Changed: file - %s the path %s, old hash sum %s, new hash sum %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash, dataCurrent.Hash)
-					hs.hashRepository.DeleteAllRowsDB()
 					ticker.Stop()
-					cancel()
-					os.Exit(2)
-
+					return true, []models.DeletedHashes{}
 				}
 				trigger = true
 				break
@@ -158,7 +157,6 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, trigger bool, curren
 		}
 
 		if !trigger {
-			count++
 			fmt.Printf("Deleted: file - %s the path %s hash sum %s\n", dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash)
 			deletedResult = append(deletedResult, models.DeletedHashes{
 				FileName:    dataFromDB.FileName,
@@ -166,30 +164,27 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, trigger bool, curren
 				OldChecksum: dataFromDB.Hash,
 				Algorithm:   dataFromDB.Algorithm,
 			})
-			hs.hashRepository.DeleteAllRowsDB()
 			ticker.Stop()
-			cancel()
-			os.Exit(2)
+			return true, deletedResult
 		}
 	}
-	return trigger, count, deletedResult
+	return false, deletedResult
 }
 
-func matchWithDataCurrent(currentHashData []api.HashData, trigger bool, hashSumFromDB []models.HashDataFromDB, count int) int {
-	for _, dataCurrent := range currentHashData {
-		trigger = false
-		for _, dataFromDB := range hashSumFromDB {
-			if dataCurrent.FullFilePath == dataFromDB.FullFilePath {
-				trigger = true
-				break
-			}
-		}
+func matchWithDataCurrent(currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB, ticker *time.Ticker) bool {
+	dataFromDB := make(map[string]struct{}, len(hashDataFromDB))
+	for _, value := range hashDataFromDB {
+		dataFromDB[value.FullFilePath] = struct{}{}
+	}
 
-		if !trigger {
-			count++
+	for _, dataCurrent := range currentHashData {
+		if _, ok := dataFromDB[dataCurrent.FullFilePath]; !ok {
 			fmt.Printf("Added: file - %s the path %s hash sum %s\n",
 				dataCurrent.FileName, dataCurrent.FullFilePath, dataCurrent.Hash)
+			ticker.Stop()
+			return true
 		}
+
 	}
-	return count
+	return false
 }

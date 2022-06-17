@@ -7,9 +7,9 @@ metadata:
   labels:
     app: nginx-webapp
 data:
-
+  #pid: $(pidof -s nginx)
   PID_NAME: "nginx"
   POD_NAME: sidecar-pod
-  NAME_IMAGE_TAG: "upgrade:latest"
+  #NAME_IMAGE_TAG: "upgrade:latest"
 
 

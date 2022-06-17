@@ -29,6 +29,8 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 		logger.Fatalf("can't init service: %s", err)
 	}
 
+	kuberData := service.ConnectionToKuberAPI()
+
 	ticker := time.NewTicker(5 * time.Second)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -44,7 +46,7 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 			} else {
 				logger.Info("Check, not empty DB")
 				for range ticker.C {
-					err := service.Check(ctx, ticker, dirPath, sig)
+					err := service.Check(ctx, ticker, dirPath, sig, kuberData)
 					if err != nil {
 						logger.Fatalf("Error when starting to check hash data %s", err)
 					}
@@ -55,5 +57,5 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 	}(ctx)
 
 	wg.Wait()
-	fmt.Println("Ticker stopped")
+	fmt.Println("App stopped")
 }

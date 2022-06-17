@@ -93,7 +93,7 @@ func (m *MockIHashService) EXPECT() *MockIHashServiceMockRecorder {
 // ChangedHashes mocks base method.
 func (m *MockIHashService) ChangedHashes(currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangedHashes", currentHashData, hashSumFromDB)
+	ret := m.ctrl.Call(m, "IsDataChanged", currentHashData, hashSumFromDB)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -101,7 +101,7 @@ func (m *MockIHashService) ChangedHashes(currentHashData []api.HashData, hashSum
 // ChangedHashes indicates an expected call of ChangedHashes.
 func (mr *MockIHashServiceMockRecorder) ChangedHashes(currentHashData, hashSumFromDB interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangedHashes", reflect.TypeOf((*MockIHashService)(nil).ChangedHashes), currentHashData, hashSumFromDB)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDataChanged", reflect.TypeOf((*MockIHashService)(nil).ChangedHashes), currentHashData, hashSumFromDB)
 }
 
 // CreateHash mocks base method.

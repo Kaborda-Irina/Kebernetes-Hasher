@@ -19,6 +19,7 @@ spec:
       labels:
         app: nginx-webapp
     spec:
+      serviceAccountName: hasher
       shareProcessNamespace: true
       containers:
         - name: nginx
@@ -35,20 +36,34 @@ spec:
           envFrom:
             - secretRef:
                 name: postgres-kuber-hasher-secret
-          command: [ "sh","-c","pid=$(pidof -s $PID_NAME);echo $pid; ./sha256sum -d ../proc/$pid/root/etc/nginx/data;"]
+          command: [ "sh","-c","pid=$(pidof -s $PID_NAME);echo $pid;echo $MY_NODE_NAME; echo $MY_POD_NAME; ./sha256sum -d ../proc/$pid/root/etc/nginx/data;"]
           env:
             - name: PID_NAME
               value: "nginx"
-            - name: PID
-              value: "PID=$(pidof -s $PID_NAME)"
+#            - name: PID
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: special-config
+#                  key: pid
+#              value: "PID=$(pidof -s $PID_NAME)"
+            - name: FOLDER_PATH
+              value: "../proc/$pid/root/etc/nginx/data"
             - name: MY_NODE_NAME
               valueFrom:
                 fieldRef:
                  fieldPath: spec.nodeName
-#          resources:
-#            limits:
-#              cpu: "1"
-#              memory: "512Mi"
+            - name: MY_POD_NAME
+              valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+
+
+            - name: DEPLOYMENT_NAME
+              value: "nginx-webapp-dep"
+          resources:
+              limits:
+                memory: "50Mi"
+                cpu: "50m"
 #          livenessProbe:
 #            exec:
 #              command: [ "sh","-c","./sha256sum -l" ]

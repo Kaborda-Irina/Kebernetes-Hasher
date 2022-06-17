@@ -1,5 +1,7 @@
 package models
 
+import "k8s.io/client-go/kubernetes"
+
 type HashDataFromDB struct {
 	ID           int
 	Hash         string
@@ -22,4 +24,11 @@ type ConnectionDB struct {
 	DbPort     string
 	DbHost     string
 	DbName     string
+}
+
+type KuberData struct {
+	Clientset  *kubernetes.Clientset
+	Namespace  string
+	TargetName string
+	TargetType string
 }

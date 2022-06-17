@@ -2,14 +2,13 @@ package services
 
 import (
 	"context"
-	"time"
-
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/ports"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/repositories"
-
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
 
 	"github.com/sirupsen/logrus"
@@ -18,6 +17,7 @@ import (
 type AppService struct {
 	ports.IHashService
 	ports.IAppRepository
+	ports.IKuberService
 	logger *logrus.Logger
 }
 
@@ -28,9 +28,11 @@ func NewAppService(r *repositories.AppRepository, algorithm string, logger *logr
 	if err != nil {
 		return nil, err
 	}
+	kuberService := NewKuberService(logger)
 	return &AppService{
 		IHashService:   IHashService,
 		IAppRepository: r,
+		IKuberService:  kuberService,
 		logger:         logger,
 	}, nil
 }
@@ -64,17 +66,27 @@ func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Si
 }
 
 // StartCheckHashData getting the hash sum of all files, matches them and outputs to os.Stdout changes
-func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName string, sig chan os.Signal) error {
+func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
 	allHashDataCurrent := as.LaunchHasher(ctx, flagName, sig)
 	allHashDataFromDB, err := as.IHashService.GetHashSum(ctx, flagName)
 	if err != nil {
 		as.logger.Error("Error getting hash data from database ", err)
 		return err
 	}
-	err = as.IHashService.ChangedHashes(ctx, ticker, allHashDataCurrent, allHashDataFromDB)
+	isDataChanged, err := as.IHashService.IsDataChanged(ctx, ticker, allHashDataCurrent, allHashDataFromDB)
 	if err != nil {
 		as.logger.Error("Error match data currently and data from db ", err)
 		return err
 	}
+	if isDataChanged {
+		err := as.IHashService.DeleteAllRowsDB()
+		if err != nil {
+			as.logger.Error("Error while deleting rows in db", err)
+			return err
+		}
+
+		err = as.IKuberService.RolloutDeployment(kuberData)
+	}
+
 	return nil
 }
