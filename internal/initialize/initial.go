@@ -2,7 +2,6 @@ package initialize
 
 import (
 	"context"
-	"fmt"
 	config "github.com/Kaborda-Irina/Kubernetes-Hasher/internal/configs"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/services"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/repositories"
@@ -23,16 +22,18 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 	// Initialize repository
 	repository := repositories.NewAppRepository(db, logger)
 
-	// InitializeDB service
+	// Initialize service
 	service, err := services.NewAppService(repository, algorithm, logger)
 	if err != nil {
 		logger.Fatalf("can't init service: %s", err)
 	}
 
+	// Initialize kubernetesAPI
 	kuberData, err := service.ConnectionToKuberAPI()
 	if err != nil {
 		logger.Fatalf("can't connection to kuberAPI: %s", err)
 	}
+
 	ticker := time.NewTicker(5 * time.Second)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -46,7 +47,7 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 					logger.Fatalf("Error when starting to get hash data %s", err)
 				}
 			} else {
-				logger.Info("Check, not empty DB")
+				logger.Info("Checking, not empty DB")
 				for range ticker.C {
 					err := service.Check(ctx, ticker, dirPath, sig, kuberData)
 					if err != nil {
@@ -57,7 +58,5 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 
 		}
 	}(ctx)
-
 	wg.Wait()
-	fmt.Println("App stopped")
 }

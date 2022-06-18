@@ -46,10 +46,11 @@ func (as *AppService) LaunchHasher(ctx context.Context, flagName string, sig cha
 	return allHashData
 }
 
+//CheckIsEmptyDB checks if the database is empty
 func (as *AppService) CheckIsEmptyDB() bool {
 	isEmptyDB, err := as.IAppRepository.CheckIsEmptyDB()
 	if err != nil {
-		as.logger.Fatalf("error while saving data to db %s", err)
+		as.logger.Fatalf("database check error %s", err)
 	}
 	return isEmptyDB
 }

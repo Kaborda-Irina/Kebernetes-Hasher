@@ -30,8 +30,8 @@ func NewHashRepository(db *sql.DB, logger *logrus.Logger) *HashRepository {
 
 // SaveHashData iterates through all elements of the slice and triggers the save to database function
 func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error {
-	//_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
-	//defer cancel()
+	_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
+	defer cancel()
 
 	tx, err := hr.db.Begin()
 	if err != nil {
@@ -84,32 +84,6 @@ func (hr HashRepository) GetHashSum(ctx context.Context, dirFiles, algorithm str
 	}
 
 	return allHashDataFromDB, nil
-}
-
-// UpdateDeletedItems changes the deleted field to true in the database for each row if the file name has been deleted
-func (hr HashRepository) UpdateDeletedItems(deletedItems []models.DeletedHashes) error {
-	tx, err := hr.db.Begin()
-	if err != nil {
-		hr.logger.Error(err)
-		return err
-	}
-
-	query := fmt.Sprintf("UPDATE %s SET deleted = true WHERE full_file_path=$1 AND algorithm=$2", nameTable)
-
-	for _, item := range deletedItems {
-		_, err := tx.Exec(query, item.FilePath, item.Algorithm)
-
-		if err != nil {
-			err := tx.Rollback()
-			if err != nil {
-				return err
-			}
-			hr.logger.Error(err)
-			return err
-		}
-	}
-
-	return tx.Commit()
 }
 
 func (hr HashRepository) DeleteAllRowsDB() error {

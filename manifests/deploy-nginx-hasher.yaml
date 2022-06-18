@@ -49,14 +49,6 @@ spec:
               limits:
                 memory: "50Mi"
                 cpu: "50m"
-#          livenessProbe:
-#            exec:
-#              command: [ "sh","-c","./sha256sum -l" ]
-#            initialDelaySeconds: 2
-#            periodSeconds: 30
-#            failureThreshold: 1
-#            successThreshold: 1
-#            timeoutSeconds: 10
           securityContext:
             capabilities:
               add:

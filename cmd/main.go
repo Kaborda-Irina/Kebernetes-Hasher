@@ -45,6 +45,6 @@ func main() {
 	}()
 
 	//dirPath := "../h/h1"
-	algorithm := "sha256"
+	//algorithm := "sha256"
 	initialize.Initialize(ctx, cfg, logger, sig, dirPath, algorithm)
 }

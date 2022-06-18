@@ -122,34 +122,25 @@ func (hs HashService) DeleteAllRowsDB() error {
 
 // ChangedHashes checks if the current data has changed with the data stored in the database
 func (hs HashService) IsDataChanged(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB) (bool, error) {
-	var deletedResult []models.DeletedHashes
-
-	isDataChanged, deletedResult := matchwithDataDB(hashDataFromDB, currentHashData, ticker, deletedResult)
+	isDataChanged := matchwithDataDB(hashDataFromDB, currentHashData, ticker)
 	isAddFiles := matchWithDataCurrent(currentHashData, hashDataFromDB, ticker)
 
-	//if len(deletedResult) > 0 {
-	//	err := hs.hashRepository.UpdateDeletedItems(deletedResult)
-	//	if err != nil {
-	//		hs.logger.Error(err)
-	//		return false, err
-	//	}
-	//}
 	if isDataChanged || isAddFiles {
 		return true, nil
 	}
 	return false, nil
 }
 
-func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []api.HashData, ticker *time.Ticker, deletedResult []models.DeletedHashes) (bool, []models.DeletedHashes) {
+func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []api.HashData, ticker *time.Ticker) bool {
 	for _, dataFromDB := range hashSumFromDB {
 		trigger := false
 		for _, dataCurrent := range currentHashData {
-			if dataFromDB.FullFilePath == dataCurrent.FullFilePath {
+			if dataFromDB.FullFilePath == dataCurrent.FullFilePath || dataFromDB.Algorithm == dataCurrent.Algorithm {
 				if dataFromDB.Hash != dataCurrent.Hash {
 					fmt.Printf("Changed: file - %s the path %s, old hash sum %s, new hash sum %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash, dataCurrent.Hash)
 					ticker.Stop()
-					return true, []models.DeletedHashes{}
+					return true
 				}
 				trigger = true
 				break
@@ -158,17 +149,11 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []ap
 
 		if !trigger {
 			fmt.Printf("Deleted: file - %s the path %s hash sum %s\n", dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash)
-			deletedResult = append(deletedResult, models.DeletedHashes{
-				FileName:    dataFromDB.FileName,
-				FilePath:    dataFromDB.FullFilePath,
-				OldChecksum: dataFromDB.Hash,
-				Algorithm:   dataFromDB.Algorithm,
-			})
 			ticker.Stop()
-			return true, deletedResult
+			return true
 		}
 	}
-	return false, deletedResult
+	return false
 }
 
 func matchWithDataCurrent(currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB, ticker *time.Ticker) bool {
@@ -184,7 +169,6 @@ func matchWithDataCurrent(currentHashData []api.HashData, hashDataFromDB []model
 			ticker.Stop()
 			return true
 		}
-
 	}
 	return false
 }

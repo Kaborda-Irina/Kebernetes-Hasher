@@ -76,7 +76,6 @@ func (ks *KuberService) GetDataFromKuberAPI(kuberData models.KuberData) (models.
 	deploymentData.Timestamp = fmt.Sprintf("%v", allDeploymentData.CreationTimestamp)
 
 	for _, v := range allDeploymentData.Spec.Template.Spec.Containers {
-		fmt.Printf("containers %v\n", v)
 		for _, e := range v.Env {
 			if e.Name == "MY_POD_NAME" {
 				deploymentData.NamePod = os.Getenv("MY_POD_NAME")
@@ -99,7 +98,7 @@ func (ks *KuberService) RolloutDeployment(kuberData models.KuberData) error {
 		ks.logger.Error("### 👎 Warning: Failed to patch %s, restart failed: %v", kuberData.TargetType, err)
 		return err
 	} else {
-		ks.logger.Info("### ✅ Target %s, named %s was restarted!", kuberData.TargetType, kuberData.TargetName)
+		ks.logger.Printf("### ✅ Target %v, named %v was restarted!", kuberData.TargetType, kuberData.TargetName)
 	}
 	return nil
 }

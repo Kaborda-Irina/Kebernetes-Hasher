@@ -31,7 +31,6 @@ spec:
                 full_file_path    TEXT    NOT NULL,
                 algorithm         VARCHAR NOT NULL,
                 hash_sum          VARCHAR NOT NULL,
-                deleted           BOOLEAN DEFAULT false,
                 name_pod          TEXT,
                 time_of_creation  VARCHAR (50),
                 time_state        VARCHAR (50),
