@@ -1,6 +1,8 @@
 package models
 
-import "k8s.io/client-go/kubernetes"
+import (
+	"k8s.io/client-go/kubernetes"
+)
 
 type HashDataFromDB struct {
 	ID           int
@@ -31,4 +33,11 @@ type KuberData struct {
 	Namespace  string
 	TargetName string
 	TargetType string
+}
+
+type DeploymentData struct {
+	NameContainer string
+	Image         string
+	NamePod       string
+	Timestamp     string
 }

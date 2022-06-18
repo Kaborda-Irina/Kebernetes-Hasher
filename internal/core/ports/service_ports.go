@@ -23,7 +23,7 @@ type IAppService interface {
 }
 
 type IHashService interface {
-	SaveHashData(ctx context.Context, allHashData []api.HashData) error
+	SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error
 	GetHashSum(ctx context.Context, dirFiles string) ([]models.HashDataFromDB, error)
 	DeleteAllRowsDB() error
 	IsDataChanged(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB) (bool, error)
@@ -33,7 +33,7 @@ type IHashService interface {
 }
 
 type IKuberService interface {
-	ConnectionToKuberAPI() models.KuberData
-	GetDataFromKuberAPI(kuberData models.KuberData)
+	ConnectionToKuberAPI() (models.KuberData, error)
+	GetDataFromKuberAPI(kuberData models.KuberData) (models.DeploymentData, error)
 	RolloutDeployment(kuberData models.KuberData) error
 }

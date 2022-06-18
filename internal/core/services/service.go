@@ -55,13 +55,19 @@ func (as *AppService) CheckIsEmptyDB() bool {
 }
 
 // StartGetHashData getting the hash sum of all files, outputs to os.Stdout and saves to the database
-func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Signal) error {
+func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
 	allHashData := as.LaunchHasher(ctx, flagName, sig)
-	err := as.IHashService.SaveHashData(ctx, allHashData)
+	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
+	if err != nil {
+		as.logger.Error("Error get data from kuberAPI ", err)
+		return err
+	}
+	err = as.IHashService.SaveHashData(ctx, allHashData, deploymentData)
 	if err != nil {
 		as.logger.Error("Error save hash data to database ", err)
 		return err
 	}
+
 	return nil
 }
 

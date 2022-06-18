@@ -85,11 +85,11 @@ func (hs HashService) CreateHash(path string) api.HashData {
 }
 
 // SaveHashData accesses the repository to save data to the database
-func (hs HashService) SaveHashData(ctx context.Context, allHashData []api.HashData) error {
+func (hs HashService) SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error {
 	ctx, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
 	defer cancel()
 
-	err := hs.hashRepository.SaveHashData(ctx, allHashData)
+	err := hs.hashRepository.SaveHashData(ctx, allHashData, deploymentData)
 	if err != nil {
 		hs.logger.Error("error while saving data to db", err)
 		return err

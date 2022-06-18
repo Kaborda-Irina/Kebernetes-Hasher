@@ -29,7 +29,7 @@ func NewHashRepository(db *sql.DB, logger *logrus.Logger) *HashRepository {
 }
 
 // SaveHashData iterates through all elements of the slice and triggers the save to database function
-func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.HashData) error {
+func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error {
 	//_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
 	//defer cancel()
 
@@ -39,18 +39,19 @@ func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.Has
 		return err
 	}
 	query := fmt.Sprintf(`
-		INSERT INTO hashfiles (file_name,full_file_path,hash_sum,algorithm) 
-		VALUES($1,$2,$3,$4) ON CONFLICT (full_file_path,algorithm) 
+		INSERT INTO hashfiles (file_name,full_file_path,hash_sum,algorithm,name_pod,name_container,image_tag,time_of_creation) 
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (full_file_path,algorithm) 
 		DO UPDATE SET hash_sum=EXCLUDED.hash_sum`)
 
 	for _, hash := range allHashData {
-		_, err = tx.Exec(query, hash.FileName, hash.FullFilePath, hash.Hash, hash.Algorithm)
+		_, err = tx.Exec(query, hash.FileName, hash.FullFilePath, hash.Hash, hash.Algorithm, deploymentData.NamePod, deploymentData.NameContainer, deploymentData.Image, deploymentData.Timestamp)
 		if err != nil {
 			err := tx.Rollback()
 			if err != nil {
+				hr.logger.Error("err in Rollback", err)
 				return err
 			}
-			hr.logger.Error("err in Rollback", err)
+			hr.logger.Error("err while save data in db ", err)
 			return err
 		}
 	}

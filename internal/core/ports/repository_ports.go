@@ -15,7 +15,7 @@ type IAppRepository interface {
 }
 
 type IHashRepository interface {
-	SaveHashData(ctx context.Context, allHashData []api.HashData) error
+	SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error
 	GetHashSum(ctx context.Context, dirFiles string, algorithm string) ([]models.HashDataFromDB, error)
 	UpdateDeletedItems(deletedItems []models.DeletedHashes) error
 	DeleteAllRowsDB() error
