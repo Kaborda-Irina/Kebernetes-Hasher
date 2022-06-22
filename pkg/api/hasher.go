@@ -17,13 +17,14 @@ func SearchFilePath(ctx context.Context, commonPath string, jobs chan<- string, 
 	_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
 	defer cancel()
 	err := filepath.Walk(commonPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
 		if !info.IsDir() {
 			jobs <- path
 		}
+		if err != nil {
+			logger.Error("err while going to path files", err)
+			return err
+		}
+
 		return nil
 	})
 	close(jobs)

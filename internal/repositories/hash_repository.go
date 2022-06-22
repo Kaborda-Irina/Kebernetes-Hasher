@@ -86,8 +86,8 @@ func (hr HashRepository) GetHashSum(ctx context.Context, dirFiles, algorithm str
 	return allHashDataFromDB, nil
 }
 
-func (hr HashRepository) DeleteAllRowsDB() error {
-	_, err := hr.db.Query("DELETE FROM hashfiles;")
+func (hr HashRepository) TruncateTable() error {
+	_, err := hr.db.Exec("TRUNCATE TABLE hashfiles;")
 	if err != nil {
 		hr.logger.Error("err while deleting rows in db", err)
 		return err

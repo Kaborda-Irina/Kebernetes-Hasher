@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-webapp
+  name: nginx-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-webapp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nginx-webapp
+        tcpdump-sidecar: "true"
+    spec:
+      serviceAccountName: hasher
+      shareProcessNamespace: true
+      containers:
+        - name: nginx
+          image: nginx:latest
+          stdin: true
+          tty: true
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - mountPath: /etc/nginx/data
+              name: nginx-persistent-storage
+      volumes:
+        - name: nginx-persistent-storage
+          persistentVolumeClaim:
+            claimName: nginx-persistent-volume-claim

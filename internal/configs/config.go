@@ -6,17 +6,9 @@ import (
 )
 
 type Config struct {
-	Port         int `mapstructure:"port"`
-	PostgreSQL   `mapstructure:"postgres"`
 	LoggerConfig `mapstructure:"logger"`
 }
 
-type PostgreSQL struct {
-	URI      string `mapstructure:"uri"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-	Database string `mapstructure:"database_name"`
-}
 type LoggerConfig struct {
 	Level       int    `mapstructure:"level"`
 	InfoLogFile string `mapstructure:"info_log_file"`

@@ -86,7 +86,7 @@ func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName s
 		return err
 	}
 	if isDataChanged {
-		err := as.IHashService.DeleteAllRowsDB()
+		err := as.IHashService.TruncateTable()
 		if err != nil {
 			as.logger.Error("Error while deleting rows in db", err)
 			return err

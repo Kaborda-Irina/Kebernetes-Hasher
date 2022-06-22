@@ -31,7 +31,7 @@ func main() {
 	flag.Parse()
 
 	//Initialize config
-	cfg, logger, err := config.LoadConfig()
+	_, logger, err := config.LoadConfig()
 	if err != nil {
 		logger.Fatal("Error during loading from config file", err)
 	}
@@ -44,7 +44,5 @@ func main() {
 		cancel()
 	}()
 
-	//dirPath := "../h/h1"
-	//algorithm := "sha256"
-	initialize.Initialize(ctx, cfg, logger, sig, dirPath, algorithm)
+	initialize.Initialize(ctx, logger, sig, dirPath, algorithm)
 }

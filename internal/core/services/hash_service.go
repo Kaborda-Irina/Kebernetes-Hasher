@@ -111,8 +111,8 @@ func (hs HashService) GetHashSum(ctx context.Context, dirFiles string) ([]models
 	return hash, nil
 }
 
-func (hs HashService) DeleteAllRowsDB() error {
-	err := hs.hashRepository.DeleteAllRowsDB()
+func (hs HashService) TruncateTable() error {
+	err := hs.hashRepository.TruncateTable()
 	if err != nil {
 		hs.logger.Error("err while deleting rows in db", err)
 		return err
@@ -123,9 +123,9 @@ func (hs HashService) DeleteAllRowsDB() error {
 // ChangedHashes checks if the current data has changed with the data stored in the database
 func (hs HashService) IsDataChanged(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB) (bool, error) {
 	isDataChanged := matchwithDataDB(hashDataFromDB, currentHashData, ticker)
-	isAddFiles := matchWithDataCurrent(currentHashData, hashDataFromDB, ticker)
+	isAddedFiles := matchWithDataCurrent(currentHashData, hashDataFromDB, ticker)
 
-	if isDataChanged || isAddFiles {
+	if isDataChanged || isAddedFiles {
 		return true, nil
 	}
 	return false, nil
@@ -135,7 +135,7 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []ap
 	for _, dataFromDB := range hashSumFromDB {
 		trigger := false
 		for _, dataCurrent := range currentHashData {
-			if dataFromDB.FullFilePath == dataCurrent.FullFilePath || dataFromDB.Algorithm == dataCurrent.Algorithm {
+			if dataFromDB.FullFilePath == dataCurrent.FullFilePath && dataFromDB.Algorithm == dataCurrent.Algorithm {
 				if dataFromDB.Hash != dataCurrent.Hash {
 					fmt.Printf("Changed: file - %s the path %s, old hash sum %s, new hash sum %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash, dataCurrent.Hash)

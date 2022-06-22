@@ -2,7 +2,6 @@ package initialize
 
 import (
 	"context"
-	config "github.com/Kaborda-Irina/Kubernetes-Hasher/internal/configs"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/services"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/repositories"
 	"github.com/sirupsen/logrus"
@@ -11,7 +10,7 @@ import (
 	"time"
 )
 
-func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, sig chan os.Signal, dirPath, algorithm string) {
+func Initialize(ctx context.Context, logger *logrus.Logger, sig chan os.Signal, dirPath, algorithm string) {
 	// InitializeDB PostgreSQL
 	logger.Info("Starting database connection")
 	db, err := repositories.InitializeDB(logger)
@@ -34,7 +33,7 @@ func Initialize(ctx context.Context, cfg *config.Config, logger *logrus.Logger, 
 		logger.Fatalf("can't connection to kuberAPI: %s", err)
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func(ctx context.Context) {
