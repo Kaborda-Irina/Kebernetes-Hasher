@@ -97,3 +97,8 @@ go test -v
 ```
 bash build.sh
 ```
+
+### :mag: Running linter "golangci-lint"
+```
+golangci-lint run
+```
