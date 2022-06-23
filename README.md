@@ -66,3 +66,34 @@ For example there is DEPLOYMENT file:
 ```
 kubectl apply -f manifests/hasher/test-deploy.yaml
 ```
+
+___________________________
+### :notebook_with_decorative_cover: Godoc extracts and generates documentation for Go programs
+#### Presents the documentation as a web page.
+```go
+godoc -http=:6060/sha256sum
+go doc packge.function_name
+```
+for example
+```go
+go doc pkg/api.Result
+```
+
+### :mag: Running tests
+
+You need to go to the folder where the file is located *_test.go and run the following command:
+```go
+go test -v
+```
+
+for example
+```go
+cd ../pkg/api
+go test -v
+```
+
+### :minidisc: How to create a `bin` for other platforms:
+`bin` will be located in internal/core/services/bin
+```
+bash build.sh
+```
