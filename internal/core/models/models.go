@@ -5,18 +5,12 @@ import (
 )
 
 type HashDataFromDB struct {
-	ID           int
-	Hash         string
-	FileName     string
-	FullFilePath string
-	Algorithm    string
-}
-
-type DeletedHashes struct {
-	FileName    string
-	OldChecksum string
-	FilePath    string
-	Algorithm   string
+	ID             int
+	Hash           string
+	FileName       string
+	FullFilePath   string
+	Algorithm      string
+	ImageContainer string
 }
 
 type ConnectionDB struct {

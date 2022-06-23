@@ -24,9 +24,9 @@ type IAppService interface {
 
 type IHashService interface {
 	SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error
-	GetHashSum(ctx context.Context, dirFiles string) ([]models.HashDataFromDB, error)
+	GetHashData(ctx context.Context, dirFiles string) ([]models.HashDataFromDB, error)
 	TruncateTable() error
-	IsDataChanged(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB) (bool, error)
+	IsDataChanged(ticker *time.Ticker, currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB, deploymentData models.DeploymentData) (bool, error)
 	CreateHash(path string) api.HashData
 	WorkerPool(ctx context.Context, jobs chan string, results chan api.HashData, logger *logrus.Logger)
 	Worker(ctx context.Context, wg *sync.WaitGroup, jobs <-chan string, results chan<- api.HashData, logger *logrus.Logger)

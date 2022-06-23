@@ -97,12 +97,12 @@ func (hs HashService) SaveHashData(ctx context.Context, allHashData []api.HashDa
 	return nil
 }
 
-// GetHashSum accesses the repository to get data from the database
-func (hs HashService) GetHashSum(ctx context.Context, dirFiles string) ([]models.HashDataFromDB, error) {
+// GetHashData accesses the repository to get data from the database
+func (hs HashService) GetHashData(ctx context.Context, dirFiles string) ([]models.HashDataFromDB, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
 	defer cancel()
 
-	hash, err := hs.hashRepository.GetHashSum(ctx, dirFiles, hs.alg)
+	hash, err := hs.hashRepository.GetHashData(ctx, dirFiles, hs.alg)
 	if err != nil {
 		hs.logger.Error("hash service didn't get hash sum", err)
 		return nil, err
@@ -120,9 +120,9 @@ func (hs HashService) TruncateTable() error {
 	return nil
 }
 
-// ChangedHashes checks if the current data has changed with the data stored in the database
-func (hs HashService) IsDataChanged(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB) (bool, error) {
-	isDataChanged := matchwithDataDB(hashDataFromDB, currentHashData, ticker)
+// IsDataChanged checks if the current data has changed with the data stored in the database
+func (hs HashService) IsDataChanged(ticker *time.Ticker, currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB, deploymentData models.DeploymentData) (bool, error) {
+	isDataChanged := matchwithDataDB(hashDataFromDB, currentHashData, ticker, deploymentData)
 	isAddedFiles := matchWithDataCurrent(currentHashData, hashDataFromDB, ticker)
 
 	if isDataChanged || isAddedFiles {
@@ -131,7 +131,7 @@ func (hs HashService) IsDataChanged(ctx context.Context, ticker *time.Ticker, cu
 	return false, nil
 }
 
-func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []api.HashData, ticker *time.Ticker) bool {
+func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []api.HashData, ticker *time.Ticker, deploymentData models.DeploymentData) bool {
 	for _, dataFromDB := range hashSumFromDB {
 		trigger := false
 		for _, dataCurrent := range currentHashData {
@@ -139,6 +139,12 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []ap
 				if dataFromDB.Hash != dataCurrent.Hash {
 					fmt.Printf("Changed: file - %s the path %s, old hash sum %s, new hash sum %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash, dataCurrent.Hash)
+					ticker.Stop()
+					return true
+				}
+				if dataFromDB.ImageContainer != deploymentData.Image {
+					fmt.Printf("Changed image container: file - %s the path %s, old image %s, new image %s\n",
+						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.ImageContainer, deploymentData.Image)
 					ticker.Stop()
 					return true
 				}

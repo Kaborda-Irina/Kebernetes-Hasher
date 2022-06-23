@@ -75,12 +75,17 @@ func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Si
 // StartCheckHashData getting the hash sum of all files, matches them and outputs to os.Stdout changes
 func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
 	allHashDataCurrent := as.LaunchHasher(ctx, flagName, sig)
-	allHashDataFromDB, err := as.IHashService.GetHashSum(ctx, flagName)
+	allHashDataFromDB, err := as.IHashService.GetHashData(ctx, flagName)
 	if err != nil {
 		as.logger.Error("Error getting hash data from database ", err)
 		return err
 	}
-	isDataChanged, err := as.IHashService.IsDataChanged(ctx, ticker, allHashDataCurrent, allHashDataFromDB)
+	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
+	if err != nil {
+		as.logger.Error("Error get data from kuberAPI ", err)
+		return err
+	}
+	isDataChanged, err := as.IHashService.IsDataChanged(ticker, allHashDataCurrent, allHashDataFromDB, deploymentData)
 	if err != nil {
 		as.logger.Error("Error match data currently and data from db ", err)
 		return err

@@ -59,14 +59,14 @@ func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.Has
 	return tx.Commit()
 }
 
-// GetHashSum retrieves data from the database using the path and algorithm
-func (hr HashRepository) GetHashSum(ctx context.Context, dirFiles, algorithm string) ([]models.HashDataFromDB, error) {
+// GetHashData retrieves data from the database using the path and algorithm
+func (hr HashRepository) GetHashData(ctx context.Context, dirFiles, algorithm string) ([]models.HashDataFromDB, error) {
 	_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
 	defer cancel()
 
 	var allHashDataFromDB []models.HashDataFromDB
 
-	query := fmt.Sprintf("SELECT id,file_name,full_file_path,hash_sum,algorithm FROM %s WHERE full_file_path LIKE $1 and algorithm=$2", nameTable)
+	query := fmt.Sprintf("SELECT id,file_name,full_file_path,hash_sum,algorithm,image_tag FROM %s WHERE full_file_path LIKE $1 and algorithm=$2", nameTable)
 
 	rows, err := hr.db.Query(query, "%"+dirFiles+"%", algorithm)
 	if err != nil {
@@ -75,7 +75,7 @@ func (hr HashRepository) GetHashSum(ctx context.Context, dirFiles, algorithm str
 	}
 	for rows.Next() {
 		var hashDataFromDB models.HashDataFromDB
-		err := rows.Scan(&hashDataFromDB.ID, &hashDataFromDB.FileName, &hashDataFromDB.FullFilePath, &hashDataFromDB.Hash, &hashDataFromDB.Algorithm)
+		err := rows.Scan(&hashDataFromDB.ID, &hashDataFromDB.FileName, &hashDataFromDB.FullFilePath, &hashDataFromDB.Hash, &hashDataFromDB.Algorithm, &hashDataFromDB.ImageContainer)
 		if err != nil {
 			hr.logger.Error(err)
 			return []models.HashDataFromDB{}, err

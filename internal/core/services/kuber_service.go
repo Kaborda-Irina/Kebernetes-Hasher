@@ -41,7 +41,7 @@ func (ks *KuberService) ConnectionToKuberAPI() (models.KuberData, error) {
 		return models.KuberData{}, err
 	}
 
-	ks.logger.Info("### 💻 Connecting to Kubernetes API, using host: %s", config.Host)
+	ks.logger.Info("### 💻 Connecting to Kubernetes API, using host: ", config.Host)
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		ks.logger.Error(err)
@@ -95,7 +95,7 @@ func (ks *KuberService) RolloutDeployment(kuberData models.KuberData) error {
 	_, err := kuberData.Clientset.AppsV1().Deployments(kuberData.Namespace).Patch(context.Background(), kuberData.TargetName, types.StrategicMergePatchType, []byte(patchData), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
 
 	if err != nil {
-		ks.logger.Error("### 👎 Warning: Failed to patch %s, restart failed: %v", kuberData.TargetType, err)
+		ks.logger.Printf("### 👎 Warning: Failed to patch %v, restart failed: %v", kuberData.TargetType, err)
 		return err
 	} else {
 		ks.logger.Printf("### ✅ Target %v, named %v was restarted!", kuberData.TargetType, kuberData.TargetName)
