@@ -101,11 +101,11 @@ func (hs HashService) SaveHashData(ctx context.Context, allHashData []api.HashDa
 }
 
 // GetHashData accesses the repository to get data from the database
-func (hs HashService) GetHashData(ctx context.Context, dirFiles string) ([]models.HashDataFromDB, error) {
+func (hs HashService) GetHashData(ctx context.Context, dirFiles string, deploymentData models.DeploymentData) ([]models.HashDataFromDB, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
 	defer cancel()
 
-	hash, err := hs.hashRepository.GetHashData(ctx, dirFiles, hs.alg)
+	hash, err := hs.hashRepository.GetHashData(ctx, dirFiles, hs.alg, deploymentData)
 	if err != nil {
 		hs.logger.Error("hash service didn't get hash sum", err)
 		return nil, err
@@ -114,8 +114,8 @@ func (hs HashService) GetHashData(ctx context.Context, dirFiles string) ([]model
 	return hash, nil
 }
 
-func (hs HashService) TruncateTable() error {
-	err := hs.hashRepository.TruncateTable()
+func (hs HashService) DeleteFromTable(nameDeployment string) error {
+	err := hs.hashRepository.DeleteFromTable(nameDeployment)
 	if err != nil {
 		hs.logger.Error("err while deleting rows in database", err)
 		return err
@@ -124,9 +124,9 @@ func (hs HashService) TruncateTable() error {
 }
 
 // IsDataChanged checks if the current data has changed with the data stored in the database
-func (hs HashService) IsDataChanged(ticker *time.Ticker, currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB, deploymentData models.DeploymentData) (bool, error) {
-	isDataChanged := matchwithDataDB(hashDataFromDB, currentHashData, ticker, deploymentData)
-	isAddedFiles := matchWithDataCurrent(currentHashData, hashDataFromDB, ticker)
+func (hs HashService) IsDataChanged(currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB, deploymentData models.DeploymentData) (bool, error) {
+	isDataChanged := matchwithDataDB(hashDataFromDB, currentHashData, deploymentData)
+	isAddedFiles := matchWithDataCurrent(currentHashData, hashDataFromDB)
 
 	if isDataChanged || isAddedFiles {
 		return true, nil
@@ -134,7 +134,7 @@ func (hs HashService) IsDataChanged(ticker *time.Ticker, currentHashData []api.H
 	return false, nil
 }
 
-func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []api.HashData, ticker *time.Ticker, deploymentData models.DeploymentData) bool {
+func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []api.HashData, deploymentData models.DeploymentData) bool {
 	for _, dataFromDB := range hashSumFromDB {
 		trigger := false
 		for _, dataCurrent := range currentHashData {
@@ -142,19 +142,16 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []ap
 				if dataFromDB.Hash != dataCurrent.Hash {
 					fmt.Printf("Changed: file - %s the path %s, old hash sum %s, new hash sum %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash, dataCurrent.Hash)
-					ticker.Stop()
 					return true
 				}
-				if dataFromDB.ImageContainer != deploymentData.Image {
+				if dataFromDB.ImageContainer != deploymentData.Image && dataFromDB.NameDeployment == deploymentData.NameDeployment {
 					fmt.Printf("Changed image container: file - %s the path %s, old image %s, new image %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.ImageContainer, deploymentData.Image)
-					ticker.Stop()
 					return true
 				}
 				if dataFromDB.NamePod != deploymentData.NamePod {
 					fmt.Printf("Changed name pod: file - %s the path %s, old name pod %s, new name pod %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.NamePod, deploymentData.NamePod)
-					ticker.Stop()
 					return true
 				}
 				trigger = true
@@ -164,14 +161,13 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []ap
 
 		if !trigger {
 			fmt.Printf("Deleted: file - %s the path %s hash sum %s\n", dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.Hash)
-			ticker.Stop()
 			return true
 		}
 	}
 	return false
 }
 
-func matchWithDataCurrent(currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB, ticker *time.Ticker) bool {
+func matchWithDataCurrent(currentHashData []api.HashData, hashDataFromDB []models.HashDataFromDB) bool {
 	dataFromDB := make(map[string]struct{}, len(hashDataFromDB))
 	for _, value := range hashDataFromDB {
 		dataFromDB[value.FullFilePath] = struct{}{}
@@ -181,7 +177,6 @@ func matchWithDataCurrent(currentHashData []api.HashData, hashDataFromDB []model
 		if _, ok := dataFromDB[dataCurrent.FullFilePath]; !ok {
 			fmt.Printf("Added: file - %s the path %s hash sum %s\n",
 				dataCurrent.FileName, dataCurrent.FullFilePath, dataCurrent.Hash)
-			ticker.Stop()
 			return true
 		}
 	}

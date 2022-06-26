@@ -2,6 +2,10 @@ package repositories
 
 import (
 	"database/sql"
+	"fmt"
+	"os"
+
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/ports"
 	"github.com/sirupsen/logrus"
 )
@@ -20,9 +24,10 @@ func NewAppRepository(db *sql.DB, logger *logrus.Logger) *AppRepository {
 	}
 }
 
-func (ar AppRepository) CheckIsEmptyDB() (bool, error) {
+func (ar AppRepository) CheckIsEmptyDB(kuberData models.KuberData) (bool, error) {
 	var count int
-	row := ar.db.QueryRow("SELECT COUNT(*) FROM hashfiles LIMIT 1")
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE name_deployment=$1 LIMIT 1;", os.Getenv("TABLE_NAME"))
+	row := ar.db.QueryRow(query, kuberData.TargetName)
 	err := row.Scan(&count)
 	if err != nil {
 		ar.logger.Info("err while scan row in database ", err)

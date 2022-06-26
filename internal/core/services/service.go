@@ -2,11 +2,10 @@ package services
 
 import (
 	"context"
-	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"os"
 	"strings"
-	"time"
 
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/ports"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/repositories"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
@@ -47,8 +46,8 @@ func (as *AppService) LaunchHasher(ctx context.Context, flagName string, sig cha
 }
 
 //CheckIsEmptyDB checks if the database is empty
-func (as *AppService) CheckIsEmptyDB() bool {
-	isEmptyDB, err := as.IAppRepository.CheckIsEmptyDB()
+func (as *AppService) CheckIsEmptyDB(kuberData models.KuberData) bool {
+	isEmptyDB, err := as.IAppRepository.CheckIsEmptyDB(kuberData)
 	if err != nil {
 		as.logger.Fatalf("database check error %s", err)
 	}
@@ -73,25 +72,26 @@ func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Si
 }
 
 // StartCheckHashData getting the hash sum of all files, matches them and outputs to os.Stdout changes
-func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
+func (as *AppService) Check(ctx context.Context, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
 	allHashDataCurrent := as.LaunchHasher(ctx, flagName, sig)
-	allHashDataFromDB, err := as.IHashService.GetHashData(ctx, flagName)
-	if err != nil {
-		as.logger.Error("Error getting hash data from database ", err)
-		return err
-	}
 	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
 	if err != nil {
 		as.logger.Error("Error get data from kuberAPI ", err)
 		return err
 	}
-	isDataChanged, err := as.IHashService.IsDataChanged(ticker, allHashDataCurrent, allHashDataFromDB, deploymentData)
+	allHashDataFromDB, err := as.IHashService.GetHashData(ctx, flagName, deploymentData)
+	if err != nil {
+		as.logger.Error("Error getting hash data from database ", err)
+		return err
+	}
+
+	isDataChanged, err := as.IHashService.IsDataChanged(allHashDataCurrent, allHashDataFromDB, deploymentData)
 	if err != nil {
 		as.logger.Error("Error match data currently and data from database ", err)
 		return err
 	}
 	if isDataChanged {
-		err := as.IHashService.TruncateTable()
+		err := as.IHashService.DeleteFromTable(deploymentData.NameDeployment)
 		if err != nil {
 			as.logger.Error("Error while deleting rows in database", err)
 			return err

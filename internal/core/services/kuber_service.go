@@ -78,7 +78,7 @@ func (ks *KuberService) GetDataFromKuberAPI(kuberData models.KuberData) (models.
 	}
 
 	deploymentData := models.DeploymentData{}
-
+	deploymentData.NameDeployment = kuberData.TargetName
 	deploymentData.Timestamp = fmt.Sprintf("%v", allDeploymentData.CreationTimestamp)
 	deploymentData.NamePod = os.Getenv("POD_NAME")
 

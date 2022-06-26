@@ -106,7 +106,7 @@ func (mr *MockIHashRepositoryMockRecorder) SaveHashData(ctx, allHashData, deploy
 // TruncateTable mocks base method.
 func (m *MockIHashRepository) TruncateTable() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TruncateTable")
+	ret := m.ctrl.Call(m, "DeleteFromTable")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -114,5 +114,5 @@ func (m *MockIHashRepository) TruncateTable() error {
 // TruncateTable indicates an expected call of TruncateTable.
 func (mr *MockIHashRepositoryMockRecorder) TruncateTable() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TruncateTable", reflect.TypeOf((*MockIHashRepository)(nil).TruncateTable))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFromTable", reflect.TypeOf((*MockIHashRepository)(nil).TruncateTable))
 }

@@ -11,11 +11,11 @@ import (
 //go:generate mockgen -source=repository_ports.go -destination=mocks/mock_repository.go
 
 type IAppRepository interface {
-	CheckIsEmptyDB() (bool, error)
+	CheckIsEmptyDB(kuberData models.KuberData) (bool, error)
 }
 
 type IHashRepository interface {
 	SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error
-	GetHashData(ctx context.Context, dirFiles string, algorithm string) ([]models.HashDataFromDB, error)
-	TruncateTable() error
+	GetHashData(ctx context.Context, dirFiles string, algorithm string, deploymentData models.DeploymentData) ([]models.HashDataFromDB, error)
+	DeleteFromTable(nameDeployment string) error
 }

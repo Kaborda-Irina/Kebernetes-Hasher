@@ -14,14 +14,12 @@ import (
 var dirPath string
 var algorithm string
 
-//initializes the binding of the flag to a variable that must run before the main() function
+//Initializes the binding of the flag to a variable that must run before the main() function
 func init() {
 	flag.StringVar(&dirPath, "d", "", "a specific file or directory")
 	flag.StringVar(&algorithm, "a", "SHA256", "algorithm MD5, SHA1, SHA224, SHA256, SHA384, SHA512, default: SHA256")
-}
 
-func init() {
-	// loads values from .env into the system
+	//Load values from .env into the system
 	if err := godotenv.Load(); err != nil {
 		log.Print("No .env file found")
 	}
