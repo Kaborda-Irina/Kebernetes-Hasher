@@ -30,21 +30,21 @@ cfssl gencert \
 -ca=/tmp/ca.pem \
 -ca-key=/tmp/ca-key.pem \
 -config=./webhook/tls/ca-config.json \
--hostname="tcpdump-webhook,tcpdump-webhook.default.svc.cluster.local,tcpdump-webhook.default.svc,localhost,127.0.0.1" \
+-hostname="k8s-webhook-injector,k8s-webhook-injector.default.svc.cluster.local,k8s-webhook-injector.default.svc,localhost,127.0.0.1" \
 -profile=default \
-./webhook/tls/ca-csr.json | cfssljson -bare /tmp/tcpdump-webhook
+./webhook/tls/ca-csr.json | cfssljson -bare /tmp/k8s-webhook-injector
 ```
 
 Move your SSL key and certificate to the ssl directory:
 ```
-mv /tmp/tcpdump-webhook.pem ./webhook/ssl/tcpdump.pem
-mv /tmp/tcpdump-webhook-key.pem ./webhook/ssl/tcpdump.key
+mv /tmp/k8s-webhook-injector.pem ./webhook/ssl/k8s-webhook-injector.pem
+mv /tmp/k8s-webhook-injector-key.pem ./webhook/ssl/k8s-webhook-injector.key
 ```
 
 Update ConfigMap data in the manifests/webhook/webhook-deployment.yaml file with your key and certificate:
 ```
-cat ./webhook/ssl/tcpdump.key | base64 | tr -d '\n'
-cat ./webhook/ssl/tcpdump.pem | base64 | tr -d '\n'
+cat ./webhook/ssl/k8s-webhook-injector.key | base64 | tr -d '\n'
+cat ./webhook/ssl/k8s-webhook-injector.pem | base64 | tr -d '\n'
 ```
 
 Update caBundle value in the manifests/webhook/webhook-configuration.yaml file with your base64 encoded CA certificate:

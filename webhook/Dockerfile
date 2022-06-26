@@ -5,16 +5,16 @@ ENV CGO_ENABLED 0
 
 RUN apk add git openssl
 
-WORKDIR /usr/local/go/src/tcpdump-web
+WORKDIR /usr/local/go/src/k8s-webhook-injector
 ADD . .
 RUN go mod download
-RUN go build ./cmd/tcpdump-web
+RUN go build ./cmd/k8s-webhook-injector
 
 FROM scratch
 WORKDIR /app
-COPY --from=build /usr/local/go/src/tcpdump-web/tcpdump-web .
-COPY --from=build /usr/local/go/src/tcpdump-web/webhook/ssl ssl
+COPY --from=build /usr/local/go/src/k8s-webhook-injector/k8s-webhook-injector .
+COPY --from=build /usr/local/go/src/k8s-webhook-injector/webhook/ssl ssl
 
 EXPOSE 8443
 
-CMD ["/app/tcpdump-web"]
+CMD ["/app/k8s-webhook-injector"]

@@ -18,7 +18,7 @@ spec:
     metadata:
       labels:
         app: nginx-app
-        tcpdump-sidecar: "true"
+        webhook-injector-sidecar: "true"
     spec:
       serviceAccountName: hasher
       shareProcessNamespace: true

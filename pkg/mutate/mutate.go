@@ -52,7 +52,7 @@ func AdmissionResponseFromReview(admReview *admissionv1.AdmissionReview) (*admis
 	patchType := v1.PatchTypeJSONPatch
 
 	log.Println("pod has following labels", pod.Labels)
-	if _, ok := pod.Labels["tcpdump-sidecar"]; ok {
+	if _, ok := pod.Labels["webhook-injector-sidecar"]; ok {
 		patch = `[
 		{
 			"op":"add",

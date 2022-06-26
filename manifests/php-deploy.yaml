@@ -18,7 +18,7 @@ spec:
     metadata:
       labels:
         app: php-app
-        #tcpdump-sidecar: "true"
+       # tcpdump-sidecar: "true"
     spec:
       serviceAccountName: hasher
       shareProcessNamespace: true
@@ -27,9 +27,46 @@ spec:
           image: php
           stdin: true
           tty: true
-          env:
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-          command: ["sh","-c","ps=$(ps aux);echo $ps"]
+          command: [ "sh", "-c", "pid=$(pidof -s php);echo $pid;" ]
+
+#          volumeMounts:
+#            - name: config
+#              mountPath: "/etc/config"
+#              readOnly: true
+#
+#        - image: hasher:latest
+#          imagePullPolicy: Never
+#          name: hasher-sidecar
+#          envFrom:
+#            - secretRef:
+#                name: database-secret
+#          command: ["sh", "-c", "conf=$(ls /etc/config); echo $conf;data=$(cat /etc/config/$conf);echo $data;env1=$(echo $data | cut -f 1 -d\" \");echo $env1; PID_NAME=${env1#*=};echo $PID_NAME;env2=$(echo $data | cut -f 2 -d\" \"); echo $env2;MOUNT_PATH=${env2##*=};echo $MOUNT_PATH;pid=$(pidof -s $PID_NAME);echo $pid; ./sha256sum -d ../proc/$pid/root/$MOUNT_PATH;"]
+#          volumeMounts:
+#            - name: config
+#              mountPath: /etc/config
+#              readOnly: true
+#          env:
+#            - name: POD_NAME
+#              valueFrom:
+#                fieldRef:
+#                  fieldPath: metadata.name
+#            - name: DEPLOYMENT_TYPE
+#              value: deployment
+#          resources:
+#            limits:
+#              memory: 50Mi
+#              cpu: 50m
+#          securityContext:
+#            capabilities:
+#              add:
+#                - SYS_PTRACE
+#          stdin: true
+#          tty: true
+
+      volumes:
+              - name: config
+                configMap:
+                  name: config
+                  items:
+                    - key: php
+                      path: php
