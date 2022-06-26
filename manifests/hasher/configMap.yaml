@@ -4,10 +4,8 @@ metadata:
   name: special-config
   namespace: default
   labels:
-    app: nginx-webapp
+    app: php-app
 data:
   PID_NAME: "nginx"
   MAIN_CONTAINER_NAME: "nginx"
-  MOUNT_PATH: "etc/nginx/data"
-
-
+  MOUNT_PATH: "etc/nginx"

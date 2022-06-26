@@ -87,18 +87,17 @@ func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName s
 	}
 	isDataChanged, err := as.IHashService.IsDataChanged(ticker, allHashDataCurrent, allHashDataFromDB, deploymentData)
 	if err != nil {
-		as.logger.Error("Error match data currently and data from db ", err)
+		as.logger.Error("Error match data currently and data from database ", err)
 		return err
 	}
 	if isDataChanged {
 		err := as.IHashService.TruncateTable()
 		if err != nil {
-			as.logger.Error("Error while deleting rows in db", err)
+			as.logger.Error("Error while deleting rows in database", err)
 			return err
 		}
 
 		err = as.IKuberService.RolloutDeployment(kuberData)
 	}
-
 	return nil
 }

@@ -33,7 +33,6 @@ spec:
                 hash_sum          VARCHAR NOT NULL,
                 name_pod          TEXT,
                 time_of_creation  VARCHAR (50),
-                name_container    TEXT,
                 image_tag         TEXT,
                 CONSTRAINT files_unique UNIQUE (full_file_path, algorithm)
                 );'" ]

@@ -58,7 +58,10 @@ func (hs HashService) Worker(ctx context.Context, wg *sync.WaitGroup, jobs <-cha
 	defer cancel()
 	defer wg.Done()
 	for j := range jobs {
-		results <- hs.CreateHash(j)
+		data := hs.CreateHash(j)
+		if data != (api.HashData{}) {
+			results <- data
+		}
 	}
 }
 
@@ -66,7 +69,7 @@ func (hs HashService) Worker(ctx context.Context, wg *sync.WaitGroup, jobs <-cha
 func (hs HashService) CreateHash(path string) api.HashData {
 	file, err := os.Open(path)
 	if err != nil {
-		hs.logger.Error("not exist file path", err)
+		hs.logger.Error("not exist file path ", err)
 		return api.HashData{}
 	}
 	defer file.Close()
@@ -74,7 +77,7 @@ func (hs HashService) CreateHash(path string) api.HashData {
 	outputHashSum := api.HashData{}
 	res, err := hs.hasher.Hash(file)
 	if err != nil {
-		hs.logger.Error("not got hash sum", err)
+		hs.logger.Error("not got hash sum ", err)
 		return api.HashData{}
 	}
 	outputHashSum.Hash = res
@@ -91,7 +94,7 @@ func (hs HashService) SaveHashData(ctx context.Context, allHashData []api.HashDa
 
 	err := hs.hashRepository.SaveHashData(ctx, allHashData, deploymentData)
 	if err != nil {
-		hs.logger.Error("error while saving data to db", err)
+		hs.logger.Error("error while saving data to database", err)
 		return err
 	}
 	return nil
@@ -114,7 +117,7 @@ func (hs HashService) GetHashData(ctx context.Context, dirFiles string) ([]model
 func (hs HashService) TruncateTable() error {
 	err := hs.hashRepository.TruncateTable()
 	if err != nil {
-		hs.logger.Error("err while deleting rows in db", err)
+		hs.logger.Error("err while deleting rows in database", err)
 		return err
 	}
 	return nil
@@ -145,6 +148,12 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []ap
 				if dataFromDB.ImageContainer != deploymentData.Image {
 					fmt.Printf("Changed image container: file - %s the path %s, old image %s, new image %s\n",
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.ImageContainer, deploymentData.Image)
+					ticker.Stop()
+					return true
+				}
+				if dataFromDB.NamePod != deploymentData.NamePod {
+					fmt.Printf("Changed name pod: file - %s the path %s, old name pod %s, new name pod %s\n",
+						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.NamePod, deploymentData.NamePod)
 					ticker.Stop()
 					return true
 				}

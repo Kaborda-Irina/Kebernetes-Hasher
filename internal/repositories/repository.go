@@ -25,7 +25,7 @@ func (ar AppRepository) CheckIsEmptyDB() (bool, error) {
 	row := ar.db.QueryRow("SELECT COUNT(*) FROM hashfiles LIMIT 1")
 	err := row.Scan(&count)
 	if err != nil {
-		ar.logger.Info("err while scan row in db ", err)
+		ar.logger.Info("err while scan row in database ", err)
 		return false, err
 	}
 

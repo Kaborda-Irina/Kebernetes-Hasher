@@ -63,11 +63,6 @@ func AdmissionResponseFromReview(admReview *admissionv1.AdmissionReview) (*admis
 				"name":"hasher-sidecar",
 				"envFrom": [
 				  {
-					"configMapRef": {
-					  "name": "special-config"
-					}
-				  },
-				  {
 					"secretRef": {
 					  "name": "database-secret"
 					}
@@ -76,33 +71,44 @@ func AdmissionResponseFromReview(admReview *admissionv1.AdmissionReview) (*admis
 				"command": [
 				  "sh",
 				  "-c",
-				  "pid=$(pidof -s $PID_NAME); ./sha256sum -d ../proc/$pid/root/$MOUNT_PATH;"
+                  "conf=$(ls /etc/config); data=$(cat /etc/config/$conf);env1=$(echo $data | cut -f 1 -d\" \"); PID_NAME=\"${env1#*=}\";env2=$(echo $data | cut -f 2 -d\" \"); MOUNT_PATH=\"${env2##*=}\";pid=$(pidof -s $PID_NAME); ./sha256sum -d ../proc/$pid/root/$MOUNT_PATH;"
 				],
-				"env": [
+				"volumeMounts": [
+                  {
+      				"name": "config",
+  					"mountPath": "/etc/config",
+      				"readOnly": true
+   				  }
+  				],
+                "env": [
+    			  {
+      				"name": "POD_NAME",
+      				"valueFrom": {
+        				"fieldRef": {
+          					"fieldPath": "metadata.name"
+                        }
+                    }
+                  },
 				  {
-					"name": "MY_POD_NAME",
-					"valueFrom": {
-					  "fieldRef": {
-						"fieldPath": "metadata.name"
-					  }
-					}
-				  }
-				],
+					"name": "DEPLOYMENT_TYPE",
+					"value": "deployment"
+				   }	
+                ],
 				"resources": {
 				"limits": {
 				  "memory": "50Mi",
 				  "cpu": "50m"
-				}
-			  },
-			  "securityContext": {
+					}
+			  	},
+			  	"securityContext": {
 				"capabilities": {
 				  "add": [
 					"SYS_PTRACE"
-				  ]
-				}
-			  },
-			  "stdin": true,
-			  "tty": true
+				  	]
+                  }
+			  	},
+			    "stdin": true,
+			    "tty": true
 			}
 		}
 	]`

@@ -2,13 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: nginx-webapp
+    app: nginx-app
   name: nginx-webapp-dep
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nginx-webapp
+      app: nginx-app
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -17,34 +17,39 @@ spec:
   template:
     metadata:
       labels:
-        app: nginx-webapp
+        app: nginx-app
     spec:
       serviceAccountName: hasher
       shareProcessNamespace: true
       containers:
         - name: nginx
-          image: nginx
+          image: nginx:latest
           stdin: true
           tty: true
-          volumeMounts:
-            - mountPath: /etc/nginx/data
-              name: nginx-persistent-storage
-
+#          volumeMounts:
+#            - mountPath: /etc/nginx/data
+#              name: nginx-persistent-storage
 
         - name: hasher-container
-          image: upgrade:latest
+          image: hasher:latest
           imagePullPolicy: Never
           envFrom:
-            - configMapRef:
-                name: special-config
+#            - configMapRef:
+#                name: config
             - secretRef:
-                name: postgres-kuber-hasher-secret
-          command: [ "sh","-c","pid=$(pidof -s $PID_NAME); ./sha256sum -d ../proc/$pid/root/$MOUNT_PATH;"]
+                name: database-secret
+          command: [ "sh","-c", "conf=$CONF; file=$(echo $conf | cut -f 1 -d\",\" );PID_NAME=\"${file#*=}\";echo $PID_NAME;MOUNT_PATH=\"${conf##*=}\";echo $MOUNT_PATH;pid=$(pidof -s $PID_NAME); ./sha256sum -d ../proc/$pid/root/$MOUNT_PATH"]
           env:
             - name: MY_POD_NAME
               valueFrom:
-                  fieldRef:
-                    fieldPath: metadata.name
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CONF
+              valueFrom:
+                configMapKeyRef:
+                  key: nginx
+                  name: config
+
           resources:
               limits:
                 memory: "50Mi"

@@ -11,6 +11,7 @@ type HashDataFromDB struct {
 	FullFilePath   string
 	Algorithm      string
 	ImageContainer string
+	NamePod        string
 }
 
 type ConnectionDB struct {
@@ -30,8 +31,7 @@ type KuberData struct {
 }
 
 type DeploymentData struct {
-	NameContainer string
-	Image         string
-	NamePod       string
-	Timestamp     string
+	Image     string
+	NamePod   string
+	Timestamp string
 }

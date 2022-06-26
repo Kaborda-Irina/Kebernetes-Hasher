@@ -15,7 +15,7 @@ func Initialize(ctx context.Context, logger *logrus.Logger, sig chan os.Signal, 
 	logger.Info("Starting database connection")
 	db, err := repositories.InitializeDB(logger)
 	if err != nil {
-		logger.Error("Failed to connection to db", err)
+		logger.Error("Failed to connection to database", err)
 	}
 
 	// Initialize repository

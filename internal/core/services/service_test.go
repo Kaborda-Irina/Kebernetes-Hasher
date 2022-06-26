@@ -35,7 +35,7 @@ func TestStartGetHashData(t *testing.T) {
 			},
 		},
 		{
-			name:        "error while saving to db",
+			name:        "error while saving to database",
 			flagName:    "d",
 			expectedErr: true,
 			mockBehavior: func(s *mock_ports.MockIAppService, ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) {
@@ -84,7 +84,7 @@ func TestStartCheckHashData(t *testing.T) {
 			},
 		},
 		{
-			name:        "error while getting to db",
+			name:        "error while getting to database",
 			flagName:    "d",
 			expectedErr: true,
 			mockBehavior: func(s *mock_ports.MockIAppService, ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) {
@@ -92,11 +92,11 @@ func TestStartCheckHashData(t *testing.T) {
 			},
 		},
 		{
-			name:        "error while changing data to db",
+			name:        "error while changing data to database",
 			flagName:    "d",
 			expectedErr: true,
 			mockBehavior: func(s *mock_ports.MockIAppService, ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) {
-				s.EXPECT().StartCheckHashData(ctx, flagName, jobs, results, sig).Return(errors.New("error match data currently and data from db"))
+				s.EXPECT().StartCheckHashData(ctx, flagName, jobs, results, sig).Return(errors.New("error match data currently and data from database"))
 			},
 		},
 	}

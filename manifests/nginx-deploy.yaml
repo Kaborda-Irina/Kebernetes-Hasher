@@ -2,13 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: nginx-webapp
-  name: nginx-deploy
+    app: nginx-app
+  name: nginx-deploy2
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nginx-webapp
+      app: nginx-app
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -17,7 +17,7 @@ spec:
   template:
     metadata:
       labels:
-        app: nginx-webapp
+        app: nginx-app
         tcpdump-sidecar: "true"
     spec:
       serviceAccountName: hasher
@@ -27,15 +27,15 @@ spec:
           image: nginx:latest
           stdin: true
           tty: true
-          env:
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
           volumeMounts:
-            - mountPath: /etc/nginx/data
-              name: nginx-persistent-storage
+            - name: config
+              mountPath: "/etc/config"
+              readOnly: true
+
       volumes:
-        - name: nginx-persistent-storage
-          persistentVolumeClaim:
-            claimName: nginx-persistent-volume-claim
+        - name: config
+          configMap:
+            name: config
+            items:
+              - key: nginx
+                path: nginx
