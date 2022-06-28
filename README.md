@@ -1,13 +1,26 @@
 # Kubernetes-Hasher
 
-Calculates the hash sum of files in algorithms ( **MD5, SHA256, SHA1, SHA224, SHA384, SHA512**).
+The implementation of a hasher in golang, which calculates the checksum of files using different algorithms in kubernetes. ( **MD5, SHA256, SHA1, SHA224, SHA384, SHA512**).
 
 + we used standard libraries "crypto/sha1", "crypto/sha256","crypto/sha512"
 + you can see https://pkg.go.dev/crypto
 
-## :hammer: Installation
+A Kubernetes sidecar to watch for file changes and restart deployments and pods.
+## Getting Started
 
-## Installation DATABASE
+See examples in manifests/hasher directory for how to add the hasher-sidecar to any pod, and the service account needed.
+### Running locally
+The code only works running inside a pod in Kubernetes
+You need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster.
+If you do not already have a cluster, you can create one by using `minikube`.
+## Configuration
+To work properly, you first need to set the configuration files:
++ environmental variables in the `.env` file
++ config in file `manifests/hasher/configMap.yaml`
++ secret for database `manifests/database/postgres-secret.yaml`
+## :hammer: Installing / Deploying
+
+### Installation DATABASE
 Apply all annotations in directory "manifests/db/..":
 ```
 kubectl apply -f manifests/db/postgres-db-pv.yaml
@@ -17,8 +30,7 @@ kubectl apply -f manifests/db/postgres-db-deployment.yaml
 kubectl apply -f manifests/db/postgres-db-service.yaml
 ```
 
-## Installation WEBHOOK
-
+### Installation WEBHOOK
 Generate ca in /tmp :
 ```
 cfssl gencert -initca ./webhook/tls/ca-csr.json | cfssljson -bare /tmp/ca
@@ -64,7 +76,7 @@ kubectl apply -f manifests/webhook/webhook-configuration.yaml
 ```
 For example there is DEPLOYMENT file:
 ```
-kubectl apply -f manifests/hasher/test-deploy.yaml
+kubectl apply -f manifests/hasher/test-nginx-deploy.yaml
 ```
 
 ___________________________
