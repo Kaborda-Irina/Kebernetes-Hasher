@@ -2,11 +2,10 @@ package services
 
 import (
 	"context"
-	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"os"
 	"strings"
-	"time"
 
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/ports"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/repositories"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
@@ -36,19 +35,21 @@ func NewAppService(r *repositories.AppRepository, algorithm string, logger *logr
 		logger:         logger,
 	}, nil
 }
-func (as *AppService) LaunchHasher(ctx context.Context, flagName string, sig chan os.Signal) []api.HashData {
+
+//LaunchHasher takes a path to a directory and returns HashData
+func (as *AppService) LaunchHasher(ctx context.Context, dirPath string, sig chan os.Signal) []api.HashData {
 	jobs := make(chan string)
 	results := make(chan api.HashData)
 	go as.IHashService.WorkerPool(ctx, jobs, results, as.logger)
-	go api.SearchFilePath(ctx, flagName, jobs, as.logger)
+	go api.SearchFilePath(ctx, dirPath, jobs, as.logger)
 	allHashData := api.Result(ctx, results, sig)
 
 	return allHashData
 }
 
 //CheckIsEmptyDB checks if the database is empty
-func (as *AppService) CheckIsEmptyDB() bool {
-	isEmptyDB, err := as.IAppRepository.CheckIsEmptyDB()
+func (as *AppService) CheckIsEmptyDB(kuberData models.KuberData) bool {
+	isEmptyDB, err := as.IAppRepository.CheckIsEmptyDB(kuberData)
 	if err != nil {
 		as.logger.Fatalf("database check error %s", err)
 	}
@@ -56,8 +57,8 @@ func (as *AppService) CheckIsEmptyDB() bool {
 }
 
 // StartGetHashData getting the hash sum of all files, outputs to os.Stdout and saves to the database
-func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
-	allHashData := as.LaunchHasher(ctx, flagName, sig)
+func (as *AppService) Start(ctx context.Context, dirPath string, sig chan os.Signal, kuberData models.KuberData) error {
+	allHashData := as.LaunchHasher(ctx, dirPath, sig)
 	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
 	if err != nil {
 		as.logger.Error("Error get data from kuberAPI ", err)
@@ -73,27 +74,32 @@ func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Si
 }
 
 // StartCheckHashData getting the hash sum of all files, matches them and outputs to os.Stdout changes
-func (as *AppService) Check(ctx context.Context, ticker *time.Ticker, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
-	allHashDataCurrent := as.LaunchHasher(ctx, flagName, sig)
-	allHashDataFromDB, err := as.IHashService.GetHashSum(ctx, flagName)
+func (as *AppService) Check(ctx context.Context, dirPath string, sig chan os.Signal, kuberData models.KuberData) error {
+	allHashDataCurrent := as.LaunchHasher(ctx, dirPath, sig)
+	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
+	if err != nil {
+		as.logger.Error("Error get data from kuberAPI ", err)
+		return err
+	}
+	allHashDataFromDB, err := as.IHashService.GetHashData(ctx, dirPath, deploymentData)
 	if err != nil {
 		as.logger.Error("Error getting hash data from database ", err)
 		return err
 	}
-	isDataChanged, err := as.IHashService.IsDataChanged(ctx, ticker, allHashDataCurrent, allHashDataFromDB)
+
+	isDataChanged, err := as.IHashService.IsDataChanged(allHashDataCurrent, allHashDataFromDB, deploymentData)
 	if err != nil {
-		as.logger.Error("Error match data currently and data from db ", err)
+		as.logger.Error("Error match data currently and data from database ", err)
 		return err
 	}
 	if isDataChanged {
-		err := as.IHashService.DeleteAllRowsDB()
+		err := as.IHashService.DeleteFromTable(deploymentData.NameDeployment)
 		if err != nil {
-			as.logger.Error("Error while deleting rows in db", err)
+			as.logger.Error("Error while deleting rows in database", err)
 			return err
 		}
 
 		err = as.IKuberService.RolloutDeployment(kuberData)
 	}
-
 	return nil
 }

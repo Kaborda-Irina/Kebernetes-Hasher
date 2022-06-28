@@ -7,16 +7,14 @@ import (
 	"time"
 
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
-
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
-
 	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockgen -source=service_ports.go -destination=mocks/mock_service.go
 
 type IAppService interface {
-	CheckIsEmptyDB() bool
+	CheckIsEmptyDB(kuberData models.KuberData) bool
 	Start(ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error
 	Check(ctx context.Context, ticker *time.Ticker, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error
 	RolloutDeployment()
@@ -24,9 +22,9 @@ type IAppService interface {
 
 type IHashService interface {
 	SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error
-	GetHashSum(ctx context.Context, dirFiles string) ([]models.HashDataFromDB, error)
-	DeleteAllRowsDB() error
-	IsDataChanged(ctx context.Context, ticker *time.Ticker, currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB) (bool, error)
+	GetHashData(ctx context.Context, dirPath string, deploymentData models.DeploymentData) ([]models.HashDataFromDB, error)
+	DeleteFromTable(nameDeployment string) error
+	IsDataChanged(currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB, deploymentData models.DeploymentData) (bool, error)
 	CreateHash(path string) api.HashData
 	WorkerPool(ctx context.Context, jobs chan string, results chan api.HashData, logger *logrus.Logger)
 	Worker(ctx context.Context, wg *sync.WaitGroup, jobs <-chan string, results chan<- api.HashData, logger *logrus.Logger)

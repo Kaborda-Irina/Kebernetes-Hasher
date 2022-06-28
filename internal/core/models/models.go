@@ -5,18 +5,14 @@ import (
 )
 
 type HashDataFromDB struct {
-	ID           int
-	Hash         string
-	FileName     string
-	FullFilePath string
-	Algorithm    string
-}
-
-type DeletedHashes struct {
-	FileName    string
-	OldChecksum string
-	FilePath    string
-	Algorithm   string
+	ID             int
+	Hash           string
+	FileName       string
+	FullFilePath   string
+	Algorithm      string
+	ImageContainer string
+	NamePod        string
+	NameDeployment string
 }
 
 type ConnectionDB struct {
@@ -36,8 +32,8 @@ type KuberData struct {
 }
 
 type DeploymentData struct {
-	NameContainer string
-	Image         string
-	NamePod       string
-	Timestamp     string
+	Image          string
+	NamePod        string
+	Timestamp      string
+	NameDeployment string
 }

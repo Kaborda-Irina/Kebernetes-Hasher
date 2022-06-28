@@ -3,12 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -27,12 +28,6 @@ func NewKuberService(logger *logrus.Logger) *KuberService {
 }
 
 func (ks *KuberService) ConnectionToKuberAPI() (models.KuberData, error) {
-	deploymentName := os.Getenv("DEPLOYMENT_NAME")
-	if deploymentName == "" {
-		ks.logger.Fatalln("### 💥 Env var DEPLOYMENT_NAME was not set")
-	}
-	deploymentType := os.Getenv("DEPLOYMENT_TYPE")
-
 	// Connect to Kubernetes API
 	ks.logger.Info("### 🌀 Attempting to use in cluster config")
 	config, err := rest.InClusterConfig()
@@ -41,7 +36,7 @@ func (ks *KuberService) ConnectionToKuberAPI() (models.KuberData, error) {
 		return models.KuberData{}, err
 	}
 
-	ks.logger.Info("### 💻 Connecting to Kubernetes API, using host: %s", config.Host)
+	ks.logger.Info("### 💻 Connecting to Kubernetes API, using host: ", config.Host)
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		ks.logger.Error(err)
@@ -55,6 +50,17 @@ func (ks *KuberService) ConnectionToKuberAPI() (models.KuberData, error) {
 	}
 	namespace := string(namespaceBytes)
 
+	podName := os.Getenv("POD_NAME")
+
+	deploymentName := func(podName string) string {
+		elements := strings.Split(podName, "-")
+		newElements := elements[:len(elements)-2]
+		return strings.Join(newElements, "-")
+	}(podName)
+	if deploymentName == "" {
+		ks.logger.Fatalln("### 💥 Env var DEPLOYMENT_NAME was not set")
+	}
+	deploymentType := os.Getenv("DEPLOYMENT_TYPE")
 	kuberData := models.KuberData{
 		Clientset:  clientset,
 		Namespace:  namespace,
@@ -72,19 +78,12 @@ func (ks *KuberService) GetDataFromKuberAPI(kuberData models.KuberData) (models.
 	}
 
 	deploymentData := models.DeploymentData{}
-
+	deploymentData.NameDeployment = kuberData.TargetName
 	deploymentData.Timestamp = fmt.Sprintf("%v", allDeploymentData.CreationTimestamp)
+	deploymentData.NamePod = os.Getenv("POD_NAME")
 
 	for _, v := range allDeploymentData.Spec.Template.Spec.Containers {
-		for _, e := range v.Env {
-			if e.Name == "MY_POD_NAME" {
-				deploymentData.NamePod = os.Getenv("MY_POD_NAME")
-			}
-		}
-		if v.Name == os.Getenv("MAIN_CONTAINER_NAME") {
-			deploymentData.NameContainer = v.Name
-			deploymentData.Image = v.Image
-		}
+		deploymentData.Image = v.Image
 	}
 
 	return deploymentData, nil
@@ -95,7 +94,7 @@ func (ks *KuberService) RolloutDeployment(kuberData models.KuberData) error {
 	_, err := kuberData.Clientset.AppsV1().Deployments(kuberData.Namespace).Patch(context.Background(), kuberData.TargetName, types.StrategicMergePatchType, []byte(patchData), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
 
 	if err != nil {
-		ks.logger.Error("### 👎 Warning: Failed to patch %s, restart failed: %v", kuberData.TargetType, err)
+		ks.logger.Printf("### 👎 Warning: Failed to patch %v, restart failed: %v", kuberData.TargetType, err)
 		return err
 	} else {
 		ks.logger.Printf("### ✅ Target %v, named %v was restarted!", kuberData.TargetType, kuberData.TargetName)

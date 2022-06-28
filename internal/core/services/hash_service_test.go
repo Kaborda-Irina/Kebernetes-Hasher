@@ -111,13 +111,14 @@ func TestCreateHash(t *testing.T) {
 }
 
 func TestSaveHashData(t *testing.T) {
-	type mockBehavior func(r *mock_ports.MockIHashRepository, ctx context.Context, allHashData []api.HashData)
+	type mockBehavior func(r *mock_ports.MockIHashRepository, ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData)
 	testTable := []struct {
-		name         string
-		alg          string
-		allHashData  []api.HashData
-		mockBehavior mockBehavior
-		expected     error
+		name           string
+		alg            string
+		allHashData    []api.HashData
+		deploymentData models.DeploymentData
+		mockBehavior   mockBehavior
+		expected       error
 	}{
 		{
 			name: "exist path",
@@ -128,8 +129,14 @@ func TestSaveHashData(t *testing.T) {
 				FullFilePath: "../h/h1/new",
 				Algorithm:    "SHA256",
 			}},
-			mockBehavior: func(r *mock_ports.MockIHashRepository, ctx context.Context, allHashData []api.HashData) {
-				r.EXPECT().SaveHashData(ctx, allHashData).Return(nil)
+			deploymentData: models.DeploymentData{
+				NameDeployment: "nginx",
+				Image:          "nginx:latest",
+				NamePod:        "nginx-deploy",
+				Timestamp:      "01.01.2022 00:00",
+			},
+			mockBehavior: func(r *mock_ports.MockIHashRepository, ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) {
+				r.EXPECT().SaveHashData(ctx, allHashData, deploymentData).Return(nil)
 			},
 			expected: nil,
 		},
@@ -154,9 +161,9 @@ func TestSaveHashData(t *testing.T) {
 				alg:            testCase.alg,
 				logger:         l,
 			}
-			testCase.mockBehavior(repo, ctx, testCase.allHashData)
+			testCase.mockBehavior(repo, ctx, testCase.allHashData, testCase.deploymentData)
 
-			err = hashService.hashRepository.SaveHashData(ctx, testCase.allHashData)
+			err = hashService.hashRepository.SaveHashData(ctx, testCase.allHashData, testCase.deploymentData)
 			if testCase.expected != nil {
 				assert.Error(t, err)
 			} else {
@@ -166,15 +173,16 @@ func TestSaveHashData(t *testing.T) {
 	}
 }
 
-func TestGetHashSum(t *testing.T) {
-	type mockBehavior func(r *mock_ports.MockIHashRepository, ctx context.Context, dirFiles, alg string)
+func TestGetHashData(t *testing.T) {
+	type mockBehavior func(r *mock_ports.MockIHashRepository, ctx context.Context, dirFiles, alg string, deploymentData models.DeploymentData)
 	testTable := []struct {
-		name         string
-		alg          string
-		dirFiles     string
-		expected     []models.HashDataFromDB
-		mockBehavior mockBehavior
-		expectedErr  bool
+		name           string
+		alg            string
+		dirFiles       string
+		expected       []models.HashDataFromDB
+		deploymentData models.DeploymentData
+		mockBehavior   mockBehavior
+		expectedErr    bool
 	}{
 		{
 			name:     "exist path",
@@ -187,8 +195,14 @@ func TestGetHashSum(t *testing.T) {
 				FullFilePath: "../h/h1/new",
 				Algorithm:    "SHA256",
 			}},
-			mockBehavior: func(r *mock_ports.MockIHashRepository, ctx context.Context, dirFiles, alg string) {
-				r.EXPECT().GetHashSum(ctx, dirFiles, alg).Return([]models.HashDataFromDB{
+			deploymentData: models.DeploymentData{
+				NameDeployment: "nginx",
+				Image:          "nginx:latest",
+				NamePod:        "nginx-deploy",
+				Timestamp:      "01.01.2022 00:00",
+			},
+			mockBehavior: func(r *mock_ports.MockIHashRepository, ctx context.Context, dirFiles, alg string, deploymentData models.DeploymentData) {
+				r.EXPECT().GetHashData(ctx, dirFiles, alg, deploymentData).Return([]models.HashDataFromDB{
 					{
 						ID:           1,
 						Hash:         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -211,8 +225,14 @@ func TestGetHashSum(t *testing.T) {
 				FullFilePath: "../h/h1/new",
 				Algorithm:    "SHA256",
 			}},
-			mockBehavior: func(r *mock_ports.MockIHashRepository, ctx context.Context, dirFiles, alg string) {
-				r.EXPECT().GetHashSum(ctx, dirFiles, alg).Return([]models.HashDataFromDB{}, errors.New("hash service didn't get data"))
+			deploymentData: models.DeploymentData{
+				NameDeployment: "nginx",
+				Image:          "nginx:latest",
+				NamePod:        "nginx-deploy",
+				Timestamp:      "01.01.2022 00:00",
+			},
+			mockBehavior: func(r *mock_ports.MockIHashRepository, ctx context.Context, dirFiles, alg string, deploymentData models.DeploymentData) {
+				r.EXPECT().GetHashData(ctx, dirFiles, alg, deploymentData).Return([]models.HashDataFromDB{}, errors.New("hash service didn't get data"))
 			},
 			expectedErr: true,
 		},
@@ -237,9 +257,9 @@ func TestGetHashSum(t *testing.T) {
 				alg:            testCase.alg,
 				logger:         l,
 			}
-			testCase.mockBehavior(repo, ctx, testCase.dirFiles, testCase.alg)
+			testCase.mockBehavior(repo, ctx, testCase.dirFiles, testCase.alg, testCase.deploymentData)
 
-			data, err := hashService.hashRepository.GetHashSum(ctx, testCase.dirFiles, testCase.alg)
+			data, err := hashService.hashRepository.GetHashData(ctx, testCase.dirFiles, testCase.alg, testCase.deploymentData)
 
 			if testCase.expectedErr {
 				assert.Error(t, err)

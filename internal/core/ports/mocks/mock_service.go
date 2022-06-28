@@ -121,7 +121,7 @@ func (mr *MockIHashServiceMockRecorder) CreateHash(path interface{}) *gomock.Cal
 // GetHashSum mocks base method.
 func (m *MockIHashService) GetHashSum(ctx context.Context, dirFiles string) ([]models.HashDataFromDB, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHashSum", ctx, dirFiles)
+	ret := m.ctrl.Call(m, "GetHashData", ctx, dirFiles)
 	ret0, _ := ret[0].([]models.HashDataFromDB)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -130,7 +130,7 @@ func (m *MockIHashService) GetHashSum(ctx context.Context, dirFiles string) ([]m
 // GetHashSum indicates an expected call of GetHashSum.
 func (mr *MockIHashServiceMockRecorder) GetHashSum(ctx, dirFiles interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHashSum", reflect.TypeOf((*MockIHashService)(nil).GetHashSum), ctx, dirFiles)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHashData", reflect.TypeOf((*MockIHashService)(nil).GetHashSum), ctx, dirFiles)
 }
 
 // SaveHashData mocks base method.

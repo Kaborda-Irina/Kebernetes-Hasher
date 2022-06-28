@@ -4,17 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/consts"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
-
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
 
 	"github.com/sirupsen/logrus"
 )
-
-const nameTable = "hashfiles"
 
 type HashRepository struct {
 	db     *sql.DB
@@ -35,23 +33,23 @@ func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.Has
 
 	tx, err := hr.db.Begin()
 	if err != nil {
-		hr.logger.Error("err while saving data in db ", err)
+		hr.logger.Error("err while saving data in database ", err)
 		return err
 	}
 	query := fmt.Sprintf(`
-		INSERT INTO hashfiles (file_name,full_file_path,hash_sum,algorithm,name_pod,name_container,image_tag,time_of_creation) 
+		INSERT INTO %s (file_name,full_file_path,hash_sum,algorithm,name_pod,image_tag,time_of_creation, name_deployment) 
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (full_file_path,algorithm) 
-		DO UPDATE SET hash_sum=EXCLUDED.hash_sum`)
+		DO UPDATE SET hash_sum=EXCLUDED.hash_sum`, os.Getenv("TABLE_NAME"))
 
 	for _, hash := range allHashData {
-		_, err = tx.Exec(query, hash.FileName, hash.FullFilePath, hash.Hash, hash.Algorithm, deploymentData.NamePod, deploymentData.NameContainer, deploymentData.Image, deploymentData.Timestamp)
+		_, err = tx.Exec(query, hash.FileName, hash.FullFilePath, hash.Hash, hash.Algorithm, deploymentData.NamePod, deploymentData.Image, deploymentData.Timestamp, deploymentData.NameDeployment)
 		if err != nil {
 			err := tx.Rollback()
 			if err != nil {
 				hr.logger.Error("err in Rollback", err)
 				return err
 			}
-			hr.logger.Error("err while save data in db ", err)
+			hr.logger.Error("err while save data in database ", err)
 			return err
 		}
 	}
@@ -59,23 +57,23 @@ func (hr HashRepository) SaveHashData(ctx context.Context, allHashData []api.Has
 	return tx.Commit()
 }
 
-// GetHashSum retrieves data from the database using the path and algorithm
-func (hr HashRepository) GetHashSum(ctx context.Context, dirFiles, algorithm string) ([]models.HashDataFromDB, error) {
+// GetHashData retrieves data from the database using the path and algorithm
+func (hr HashRepository) GetHashData(ctx context.Context, dirFiles, algorithm string, deploymentData models.DeploymentData) ([]models.HashDataFromDB, error) {
 	_, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
 	defer cancel()
 
 	var allHashDataFromDB []models.HashDataFromDB
 
-	query := fmt.Sprintf("SELECT id,file_name,full_file_path,hash_sum,algorithm FROM %s WHERE full_file_path LIKE $1 and algorithm=$2", nameTable)
+	query := fmt.Sprintf("SELECT id,file_name,full_file_path,hash_sum,algorithm,image_tag,name_pod,name_deployment FROM %s WHERE full_file_path LIKE $1 and algorithm=$2 and name_pod=$3", os.Getenv("TABLE_NAME"))
 
-	rows, err := hr.db.Query(query, "%"+dirFiles+"%", algorithm)
+	rows, err := hr.db.Query(query, "%"+dirFiles+"%", algorithm, deploymentData.NamePod)
 	if err != nil {
 		hr.logger.Error(err)
 		return []models.HashDataFromDB{}, err
 	}
 	for rows.Next() {
 		var hashDataFromDB models.HashDataFromDB
-		err := rows.Scan(&hashDataFromDB.ID, &hashDataFromDB.FileName, &hashDataFromDB.FullFilePath, &hashDataFromDB.Hash, &hashDataFromDB.Algorithm)
+		err := rows.Scan(&hashDataFromDB.ID, &hashDataFromDB.FileName, &hashDataFromDB.FullFilePath, &hashDataFromDB.Hash, &hashDataFromDB.Algorithm, &hashDataFromDB.ImageContainer, &hashDataFromDB.NamePod, &hashDataFromDB.NameDeployment)
 		if err != nil {
 			hr.logger.Error(err)
 			return []models.HashDataFromDB{}, err
@@ -86,10 +84,11 @@ func (hr HashRepository) GetHashSum(ctx context.Context, dirFiles, algorithm str
 	return allHashDataFromDB, nil
 }
 
-func (hr HashRepository) DeleteAllRowsDB() error {
-	_, err := hr.db.Query("DELETE FROM hashfiles;")
+func (hr HashRepository) DeleteFromTable(nameDeployment string) error {
+	query := fmt.Sprintf("DELETE FROM %s WHERE name_deployment=$1;", os.Getenv("TABLE_NAME"))
+	_, err := hr.db.Exec(query, nameDeployment)
 	if err != nil {
-		hr.logger.Error("err while deleting rows in db", err)
+		hr.logger.Error("err while deleting rows in database", err)
 		return err
 	}
 	return nil

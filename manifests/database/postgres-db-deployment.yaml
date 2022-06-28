@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment                                # Type of the kubernetes resource
 metadata:
-  name: kuber-hasher-deploy                    # Name of the deployment
+  name: database-deploy                    # Name of the deployment
   labels:                                        # Labels applied to this deployment 
     app: kuber-hasher
 spec:
@@ -31,17 +31,15 @@ spec:
                 full_file_path    TEXT    NOT NULL,
                 algorithm         VARCHAR NOT NULL,
                 hash_sum          VARCHAR NOT NULL,
+                name_deployment   TEXT,
                 name_pod          TEXT,
                 time_of_creation  VARCHAR (50),
-                time_state        VARCHAR (50),
-                name_container    TEXT,
                 image_tag         TEXT,
                 CONSTRAINT files_unique UNIQUE (full_file_path, algorithm)
                 );'" ]
-
           envFrom:                                # Get the environmental variables from a secret file whose name is "postgres-secret"
             - secretRef:
-                name: postgres-kuber-hasher-secret
+                name: database-secret
           ports:
             - containerPort: 5432                   # The port that the container exposes 
               name: postgres

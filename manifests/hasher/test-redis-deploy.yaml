@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  redis-deployment
+  labels:
+    name:  redis
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name:  redis
+  template:
+    metadata:
+      labels:
+        name:  redis
+        webhook-injector-sidecar: "true"
+    spec:
+      serviceAccountName: hasher
+      shareProcessNamespace: true
+      containers:
+        - image: redis
+          name: redis
+          imagePullPolicy: IfNotPresent
+          stdin: true
+          tty: true
+          volumeMounts:
+              - name: config
+                mountPath: "/etc/config"
+                readOnly: true
+          ports:
+            - containerPort:  6379
+              name:  redis
+      volumes:
+        - name: config
+          configMap:
+            name: config
+            items:
+              - key: redis
+                path: redis
