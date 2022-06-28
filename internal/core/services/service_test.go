@@ -3,13 +3,14 @@ package services
 import (
 	"context"
 	"errors"
+	"os"
+	"os/signal"
+	"testing"
+
 	mock_ports "github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/ports/mocks"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"os/signal"
-	"testing"
 )
 
 func TestStartGetHashData(t *testing.T) {

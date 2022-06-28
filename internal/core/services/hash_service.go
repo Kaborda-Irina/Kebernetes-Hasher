@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/consts"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/ports"
-
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/hasher"
 
@@ -43,8 +44,14 @@ func NewHashService(hashRepository ports.IHashRepository, alg string, logger *lo
 func (hs HashService) WorkerPool(ctx context.Context, jobs chan string, results chan api.HashData, logger *logrus.Logger) {
 	ctx, cancel := context.WithTimeout(ctx, consts.TimeOut*time.Second)
 	defer cancel()
+
+	countWorkers, err := strconv.Atoi(os.Getenv("COUNT_WORKERS"))
+	if err != nil {
+		countWorkers = runtime.NumCPU()
+	}
+
 	var wg sync.WaitGroup
-	for w := 1; w <= consts.CountWorkers; w++ {
+	for w := 1; w <= countWorkers; w++ {
 		wg.Add(1)
 		go hs.Worker(ctx, &wg, jobs, results, logger)
 	}

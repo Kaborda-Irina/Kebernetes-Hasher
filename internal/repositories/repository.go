@@ -24,13 +24,14 @@ func NewAppRepository(db *sql.DB, logger *logrus.Logger) *AppRepository {
 	}
 }
 
+//CheckIsEmptyDB checks if the base is empty
 func (ar AppRepository) CheckIsEmptyDB(kuberData models.KuberData) (bool, error) {
 	var count int
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE name_deployment=$1 LIMIT 1;", os.Getenv("TABLE_NAME"))
 	row := ar.db.QueryRow(query, kuberData.TargetName)
 	err := row.Scan(&count)
 	if err != nil {
-		ar.logger.Info("err while scan row in database ", err)
+		ar.logger.Error("err while scan row in database ", err)
 		return false, err
 	}
 

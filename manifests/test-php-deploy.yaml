@@ -2,13 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: nginx-app
-  name: nginx-deploy
+    app: php-app
+  name: php-deploy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nginx-app
+      app: php-app
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -17,25 +17,24 @@ spec:
   template:
     metadata:
       labels:
-        app: nginx-app
+        app: php-app
         webhook-injector-sidecar: "true"
     spec:
       serviceAccountName: hasher
       shareProcessNamespace: true
       containers:
-        - name: nginx
-          image: nginx:latest
+        - name: php
+          image: php:latest
           stdin: true
           tty: true
           volumeMounts:
             - name: config
               mountPath: "/etc/config"
               readOnly: true
-
       volumes:
-        - name: config
-          configMap:
-            name: config
-            items:
-              - key: nginx
-                path: nginx
+              - name: config
+                configMap:
+                  name: config
+                  items:
+                    - key: php
+                      path: php

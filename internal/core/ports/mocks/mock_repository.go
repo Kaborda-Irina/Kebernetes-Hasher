@@ -37,18 +37,18 @@ func (m *MockIAppRepository) EXPECT() *MockIAppRepositoryMockRecorder {
 }
 
 // CheckIsEmptyDB mocks base method.
-func (m *MockIAppRepository) CheckIsEmptyDB() (bool, error) {
+func (m *MockIAppRepository) CheckIsEmptyDB(kuberData models.KuberData) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckIsEmptyDB")
+	ret := m.ctrl.Call(m, "CheckIsEmptyDB", kuberData)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CheckIsEmptyDB indicates an expected call of CheckIsEmptyDB.
-func (mr *MockIAppRepositoryMockRecorder) CheckIsEmptyDB() *gomock.Call {
+func (mr *MockIAppRepositoryMockRecorder) CheckIsEmptyDB(kuberData interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIsEmptyDB", reflect.TypeOf((*MockIAppRepository)(nil).CheckIsEmptyDB))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIsEmptyDB", reflect.TypeOf((*MockIAppRepository)(nil).CheckIsEmptyDB), kuberData)
 }
 
 // MockIHashRepository is a mock of IHashRepository interface.
@@ -74,19 +74,33 @@ func (m *MockIHashRepository) EXPECT() *MockIHashRepositoryMockRecorder {
 	return m.recorder
 }
 
-// GetHashData mocks base method.
-func (m *MockIHashRepository) GetHashData(ctx context.Context, dirFiles, algorithm string) ([]models.HashDataFromDB, error) {
+// DeleteFromTable mocks base method.
+func (m *MockIHashRepository) DeleteFromTable(nameDeployment string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHashData", ctx, dirFiles, algorithm)
+	ret := m.ctrl.Call(m, "DeleteFromTable", nameDeployment)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteFromTable indicates an expected call of DeleteFromTable.
+func (mr *MockIHashRepositoryMockRecorder) DeleteFromTable(nameDeployment interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFromTable", reflect.TypeOf((*MockIHashRepository)(nil).DeleteFromTable), nameDeployment)
+}
+
+// GetHashData mocks base method.
+func (m *MockIHashRepository) GetHashData(ctx context.Context, dirFiles, algorithm string, deploymentData models.DeploymentData) ([]models.HashDataFromDB, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHashData", ctx, dirFiles, algorithm, deploymentData)
 	ret0, _ := ret[0].([]models.HashDataFromDB)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetHashData indicates an expected call of GetHashData.
-func (mr *MockIHashRepositoryMockRecorder) GetHashData(ctx, dirFiles, algorithm interface{}) *gomock.Call {
+func (mr *MockIHashRepositoryMockRecorder) GetHashData(ctx, dirFiles, algorithm, deploymentData interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHashData", reflect.TypeOf((*MockIHashRepository)(nil).GetHashData), ctx, dirFiles, algorithm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHashData", reflect.TypeOf((*MockIHashRepository)(nil).GetHashData), ctx, dirFiles, algorithm, deploymentData)
 }
 
 // SaveHashData mocks base method.
@@ -101,18 +115,4 @@ func (m *MockIHashRepository) SaveHashData(ctx context.Context, allHashData []ap
 func (mr *MockIHashRepositoryMockRecorder) SaveHashData(ctx, allHashData, deploymentData interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveHashData", reflect.TypeOf((*MockIHashRepository)(nil).SaveHashData), ctx, allHashData, deploymentData)
-}
-
-// TruncateTable mocks base method.
-func (m *MockIHashRepository) TruncateTable() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteFromTable")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// TruncateTable indicates an expected call of TruncateTable.
-func (mr *MockIHashRepositoryMockRecorder) TruncateTable() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFromTable", reflect.TypeOf((*MockIHashRepository)(nil).TruncateTable))
 }

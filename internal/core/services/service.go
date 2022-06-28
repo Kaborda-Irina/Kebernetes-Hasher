@@ -35,11 +35,13 @@ func NewAppService(r *repositories.AppRepository, algorithm string, logger *logr
 		logger:         logger,
 	}, nil
 }
-func (as *AppService) LaunchHasher(ctx context.Context, flagName string, sig chan os.Signal) []api.HashData {
+
+//LaunchHasher takes a path to a directory and returns HashData
+func (as *AppService) LaunchHasher(ctx context.Context, dirPath string, sig chan os.Signal) []api.HashData {
 	jobs := make(chan string)
 	results := make(chan api.HashData)
 	go as.IHashService.WorkerPool(ctx, jobs, results, as.logger)
-	go api.SearchFilePath(ctx, flagName, jobs, as.logger)
+	go api.SearchFilePath(ctx, dirPath, jobs, as.logger)
 	allHashData := api.Result(ctx, results, sig)
 
 	return allHashData
@@ -55,8 +57,8 @@ func (as *AppService) CheckIsEmptyDB(kuberData models.KuberData) bool {
 }
 
 // StartGetHashData getting the hash sum of all files, outputs to os.Stdout and saves to the database
-func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
-	allHashData := as.LaunchHasher(ctx, flagName, sig)
+func (as *AppService) Start(ctx context.Context, dirPath string, sig chan os.Signal, kuberData models.KuberData) error {
+	allHashData := as.LaunchHasher(ctx, dirPath, sig)
 	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
 	if err != nil {
 		as.logger.Error("Error get data from kuberAPI ", err)
@@ -72,14 +74,14 @@ func (as *AppService) Start(ctx context.Context, flagName string, sig chan os.Si
 }
 
 // StartCheckHashData getting the hash sum of all files, matches them and outputs to os.Stdout changes
-func (as *AppService) Check(ctx context.Context, flagName string, sig chan os.Signal, kuberData models.KuberData) error {
-	allHashDataCurrent := as.LaunchHasher(ctx, flagName, sig)
+func (as *AppService) Check(ctx context.Context, dirPath string, sig chan os.Signal, kuberData models.KuberData) error {
+	allHashDataCurrent := as.LaunchHasher(ctx, dirPath, sig)
 	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
 	if err != nil {
 		as.logger.Error("Error get data from kuberAPI ", err)
 		return err
 	}
-	allHashDataFromDB, err := as.IHashService.GetHashData(ctx, flagName, deploymentData)
+	allHashDataFromDB, err := as.IHashService.GetHashData(ctx, dirPath, deploymentData)
 	if err != nil {
 		as.logger.Error("Error getting hash data from database ", err)
 		return err

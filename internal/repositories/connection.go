@@ -3,10 +3,11 @@ package repositories
 import (
 	"database/sql"
 	"fmt"
+	"os"
+
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	"os"
 )
 
 func InitializeDB(logger *logrus.Logger) (*sql.DB, error) {
@@ -28,7 +29,7 @@ func InitializeDB(logger *logrus.Logger) (*sql.DB, error) {
 
 	db, err := sql.Open(connectionDB.Dbdriver, DBURL)
 	if err != nil {
-		logger.Info("Cannot connect to %s database ", connectionDB.Dbdriver)
+		logger.Info("Cannot connect to database ", connectionDB.Dbdriver)
 		logger.Fatal("This is the error:", err)
 	} else {
 		logger.Info("Connected to the database ", connectionDB.Dbdriver)

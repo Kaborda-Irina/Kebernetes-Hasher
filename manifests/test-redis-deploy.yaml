@@ -17,12 +17,12 @@ spec:
     metadata:
       labels:
         name:  redis
-        tcpdump-sidecar: "true"
+        webhook-injector-sidecar: "true"
     spec:
       serviceAccountName: hasher
       shareProcessNamespace: true
       containers:
-        - image: redis:5.0.5-alpine
+        - image: redis
           name: redis
           imagePullPolicy: IfNotPresent
           stdin: true

@@ -3,13 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"

@@ -12,7 +12,5 @@ VOLUME /app
 COPY --from=buildenv /src/sha256sum .
 COPY --from=buildenv /src/config.yaml ./
 COPY --from=buildenv /src/.env .
-#### Local application port
-EXPOSE 9090
 
 ENTRYPOINT ["/app/sha256sum"]

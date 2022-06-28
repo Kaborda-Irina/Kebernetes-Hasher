@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/mutate"
-
 	"html"
-	admissionv1 "k8s.io/api/admission/v1"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/mutate"
+
+	admissionv1 "k8s.io/api/admission/v1"
 )
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {

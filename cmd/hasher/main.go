@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"flag"
-	config "github.com/Kaborda-Irina/Kubernetes-Hasher/internal/configs"
-	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/initialize"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"os/signal"
+
+	config "github.com/Kaborda-Irina/Kubernetes-Hasher/internal/configs"
+	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/initialize"
+	"github.com/joho/godotenv"
 )
 
 var dirPath string

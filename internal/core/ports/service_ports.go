@@ -7,9 +7,7 @@ import (
 	"time"
 
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
-
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +22,7 @@ type IAppService interface {
 
 type IHashService interface {
 	SaveHashData(ctx context.Context, allHashData []api.HashData, deploymentData models.DeploymentData) error
-	GetHashData(ctx context.Context, dirFiles string, deploymentData models.DeploymentData) ([]models.HashDataFromDB, error)
+	GetHashData(ctx context.Context, dirPath string, deploymentData models.DeploymentData) ([]models.HashDataFromDB, error)
 	DeleteFromTable(nameDeployment string) error
 	IsDataChanged(currentHashData []api.HashData, hashSumFromDB []models.HashDataFromDB, deploymentData models.DeploymentData) (bool, error)
 	CreateHash(path string) api.HashData
