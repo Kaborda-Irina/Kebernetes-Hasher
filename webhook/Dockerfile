@@ -1,4 +1,3 @@
-
 FROM golang:rc-alpine AS build
 # need to turn off CGO since otherwise there might be dynamic links
 ENV CGO_ENABLED 0

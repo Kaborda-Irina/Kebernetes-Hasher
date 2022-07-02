@@ -32,8 +32,14 @@ type KuberData struct {
 }
 
 type DeploymentData struct {
-	Image          string
-	NamePod        string
-	Timestamp      string
-	NameDeployment string
+	Image                string
+	NamePod              string
+	Timestamp            string
+	NameDeployment       string
+	LabelMainProcessName string
+}
+
+type ConfigMapData struct {
+	ProcName  string
+	MountPath string
 }
