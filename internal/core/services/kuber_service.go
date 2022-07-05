@@ -27,7 +27,28 @@ func NewKuberService(logger *logrus.Logger) *KuberService {
 	}
 }
 
-func (ks *KuberService) ConnectionToKuberAPI() (models.KuberData, error) {
+func (ks *KuberService) GetDataFromK8sAPI() (models.KuberData, models.DeploymentData, models.ConfigMapData, error) {
+	kuberData, err := ks.ConnectionToK8sAPI()
+	if err != nil {
+		ks.logger.Error("can't connection to K8sAPI: %s", err)
+		return models.KuberData{}, models.DeploymentData{}, models.ConfigMapData{}, err
+	}
+	deploymentData, err := ks.GetDataFromDeployment(kuberData)
+	if err != nil {
+		ks.logger.Error("error get data from kuberAPI %s", err)
+		return models.KuberData{}, models.DeploymentData{}, models.ConfigMapData{}, err
+	}
+
+	configData, err := ks.GetDataFromConfigMap(kuberData, deploymentData.LabelMainProcessName)
+	if err != nil {
+		ks.logger.Error("err while getting data from configMap K8sAPI %s", err)
+		return models.KuberData{}, models.DeploymentData{}, models.ConfigMapData{}, err
+	}
+
+	return kuberData, deploymentData, configData, nil
+}
+
+func (ks *KuberService) ConnectionToK8sAPI() (models.KuberData, error) {
 	// Connect to Kubernetes API
 	ks.logger.Info("### 🌀 Attempting to use in cluster config")
 	config, err := rest.InClusterConfig()
@@ -52,25 +73,53 @@ func (ks *KuberService) ConnectionToKuberAPI() (models.KuberData, error) {
 
 	podName := os.Getenv("POD_NAME")
 
-	deploymentName := func(podName string) string {
+	targetName := func(podName string) string {
 		elements := strings.Split(podName, "-")
 		newElements := elements[:len(elements)-2]
 		return strings.Join(newElements, "-")
 	}(podName)
-	if deploymentName == "" {
+	if targetName == "" {
 		ks.logger.Fatalln("### 💥 Env var DEPLOYMENT_NAME was not set")
 	}
-	deploymentType := os.Getenv("DEPLOYMENT_TYPE")
+	targetType := os.Getenv("DEPLOYMENT_TYPE")
 	kuberData := models.KuberData{
 		Clientset:  clientset,
 		Namespace:  namespace,
-		TargetName: deploymentName,
-		TargetType: deploymentType,
+		TargetName: targetName,
+		TargetType: targetType,
 	}
 	return kuberData, nil
 }
+func (ks *KuberService) GetDataFromConfigMap(kuberData models.KuberData, label string) (models.ConfigMapData, error) {
+	cm, err := kuberData.Clientset.CoreV1().ConfigMaps(kuberData.Namespace).Get(context.Background(), "hasher-config", metav1.GetOptions{})
+	if err != nil {
+		ks.logger.Error("err while getting data from configMap kuberAPI ", err)
+		return models.ConfigMapData{}, err
+	}
 
-func (ks *KuberService) GetDataFromKuberAPI(kuberData models.KuberData) (models.DeploymentData, error) {
+	var configMapData models.ConfigMapData
+	valuesEnv := make(map[string]string)
+	for key, value := range cm.Data {
+		if key == label {
+			envs := strings.Split(strings.TrimSpace(value), "\n")
+			for _, subStr := range envs {
+				valuesEnvs := strings.Split(strings.TrimSpace(subStr), "=")
+				valuesEnv[valuesEnvs[0]] = valuesEnvs[1]
+			}
+		}
+	}
+
+	if value, ok := valuesEnv["PID_NAME"]; ok {
+		configMapData.ProcName = value
+	}
+	if value, ok := valuesEnv["MOUNT_PATH"]; ok {
+		configMapData.MountPath = value
+	}
+
+	return configMapData, err
+}
+
+func (ks *KuberService) GetDataFromDeployment(kuberData models.KuberData) (models.DeploymentData, error) {
 	allDeploymentData, err := kuberData.Clientset.AppsV1().Deployments(kuberData.Namespace).Get(context.Background(), kuberData.TargetName, metav1.GetOptions{})
 	if err != nil {
 		ks.logger.Error("err while getting data from kuberAPI ", err)
@@ -84,6 +133,12 @@ func (ks *KuberService) GetDataFromKuberAPI(kuberData models.KuberData) (models.
 
 	for _, v := range allDeploymentData.Spec.Template.Spec.Containers {
 		deploymentData.Image = v.Image
+	}
+
+	for label, value := range allDeploymentData.Spec.Template.Labels {
+		if label == "hasher-webhook-process-name" {
+			deploymentData.LabelMainProcessName = value
+		}
 	}
 
 	return deploymentData, nil

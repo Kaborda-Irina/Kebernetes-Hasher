@@ -24,7 +24,7 @@ func NewAppRepository(db *sql.DB, logger *logrus.Logger) *AppRepository {
 }
 
 //CheckIsEmptyDB checks if the base is empty
-func (ar AppRepository) CheckIsEmptyDB(deploymentName string) (bool, error) {
+func (ar AppRepository) IsExistDeploymentNameInDB(deploymentName string) (bool, error) {
 	var count int
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE name_deployment=$1 LIMIT 1;", os.Getenv("TABLE_NAME"))
 	row := ar.db.QueryRow(query, deploymentName)
