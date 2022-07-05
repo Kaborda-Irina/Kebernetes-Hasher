@@ -52,7 +52,7 @@ func AdmissionResponseFromReview(admReview *admissionv1.AdmissionReview) (*admis
 	patchType := v1.PatchTypeJSONPatch
 
 	log.Println("pod has following labels", pod.Labels)
-	if _, ok := pod.Labels["webhook-injector-sidecar"]; ok {
+	if _, ok := pod.Labels["hasher-webhook-injector-sidecar"]; ok {
 		patch = `[
 		{
 			"op":"add",
@@ -64,22 +64,10 @@ func AdmissionResponseFromReview(admReview *admissionv1.AdmissionReview) (*admis
 				"envFrom": [
 				  {
 					"secretRef": {
-					  "name": "database-secret"
+					  "name": "hasher-database-secret"
 					}
 				  }
 				],
-				"command": [
-				  "sh",
-				  "-c",
-                  "conf=$(ls /etc/config); data=$(cat /etc/config/$conf);env1=$(echo $data | cut -f 1 -d\" \"); PID_NAME=\"${env1#*=}\";env2=$(echo $data | cut -f 2 -d\" \"); MOUNT_PATH=\"${env2##*=}\";pid=$(pidof -s $PID_NAME); ./sha256sum -d ../proc/$pid/root/$MOUNT_PATH;"
-				],
-				"volumeMounts": [
-                  {
-      				"name": "config",
-  					"mountPath": "/etc/config",
-      				"readOnly": true
-   				  }
-  				],
                 "env": [
     			  {
       				"name": "POD_NAME",

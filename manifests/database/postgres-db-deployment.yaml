@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment                                # Type of the kubernetes resource
 metadata:
-  name: database-deploy                    # Name of the deployment
+  name: hasher-database                    # Name of the deployment
   labels:                                        # Labels applied to this deployment 
     app: kuber-hasher
 spec:
@@ -39,7 +39,7 @@ spec:
                 );'" ]
           envFrom:                                # Get the environmental variables from a secret file whose name is "postgres-secret"
             - secretRef:
-                name: database-secret
+                name: hasher-database-secret
           ports:
             - containerPort: 5432                   # The port that the container exposes 
               name: postgres
@@ -61,7 +61,7 @@ spec:
       volumes:                                      # A PersistentVolume is mounted as a volume to the Pod
         - name: postgres-persistent-storage
           persistentVolumeClaim:
-            claimName: postgres-pvc
+            claimName: hasher-postgres-pvc
 
 
 

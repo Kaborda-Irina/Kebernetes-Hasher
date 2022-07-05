@@ -10,7 +10,7 @@ import (
 //go:generate mockgen -source=repository_ports.go -destination=mocks/mock_repository.go
 
 type IAppRepository interface {
-	CheckIsEmptyDB(kuberData models.KuberData) (bool, error)
+	IsExistDeploymentNameInDB(deploymentName string) (bool, error)
 }
 
 type IHashRepository interface {

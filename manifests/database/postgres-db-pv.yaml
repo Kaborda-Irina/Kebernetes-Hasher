@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume                        # Create a PV
 metadata:
-  name: postgres-pv
+  name: hasher-postgres-pv
   labels:
     type: local
     app: kuber-hasher

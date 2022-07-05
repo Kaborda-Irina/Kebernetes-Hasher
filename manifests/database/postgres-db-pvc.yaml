@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim                   # Create a PersistentVolumeClaim to request a PersistentVolume storage
 metadata:                                     # Claim name and labels
-  name: postgres-pvc
+  name: hasher-postgres-pvc
   labels:
     app: kuber-hasher
 spec:                                         # Access mode and resource limits

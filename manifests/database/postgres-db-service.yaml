@@ -1,7 +1,7 @@
 apiVersion: v1                                      # API version
 kind: Service                                       # Type of kubernetes resource 
 metadata:
-  name: database-svc                           # Name of the resource
+  name: hasher-database-svc                           # Name of the resource
   labels:                                           # Labels that will be applied to the resource
     app: kuber-hasher
 spec:

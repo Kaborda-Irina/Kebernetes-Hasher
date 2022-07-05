@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app: nginx-app
-  name: nginx-deploy
+  name: nginx-hasher-webhook
 spec:
   replicas: 1
   selector:
@@ -18,7 +18,8 @@ spec:
     metadata:
       labels:
         app: nginx-app
-        webhook-injector-sidecar: "true"
+        hasher-webhook-process-name: "nginx"
+        hasher-webhook-injector-sidecar: "true"
     spec:
       serviceAccountName: hasher
       shareProcessNamespace: true
@@ -27,14 +28,3 @@ spec:
           image: nginx:latest
           stdin: true
           tty: true
-          volumeMounts:
-            - name: config
-              mountPath: "/etc/config"
-              readOnly: true
-      volumes:
-        - name: config
-          configMap:
-            name: config
-            items:
-              - key: nginx
-                path: nginx

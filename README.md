@@ -53,13 +53,13 @@ mv /tmp/k8s-webhook-injector.pem ./webhook/ssl/k8s-webhook-injector.pem
 mv /tmp/k8s-webhook-injector-key.pem ./webhook/ssl/k8s-webhook-injector.key
 ```
 
-Update ConfigMap data in the manifests/webhook/webhook-deployment.yaml file with your key and certificate:
+Update configuration data in the manifests/webhook/webhook-configMap.yaml file with your key in the appropriate field `data:server.key` and certificate in the appropriate field `data:server.crt:`:
 ```
 cat ./webhook/ssl/k8s-webhook-injector.key | base64 | tr -d '\n'
 cat ./webhook/ssl/k8s-webhook-injector.pem | base64 | tr -d '\n'
 ```
 
-Update caBundle value in the manifests/webhook/webhook-configuration.yaml file with your base64 encoded CA certificate:
+Update field `caBundle` value in the manifests/webhook/webhook-configuration.yaml file with your base64 encoded CA certificate:
 ```
 cat /tmp/ca.pem | base64 | tr -d '\n'
 ```
@@ -71,13 +71,25 @@ docker build -t hasher .
 ```
 Apply webhook annotation:
 ```
+kubectl apply -f manifests/webhook/webhook-configMap.yaml
 kubectl apply -f manifests/webhook/webhook-deployment.yaml
+kubectl apply -f manifests/webhook/webhook-service.yaml
 kubectl apply -f manifests/webhook/webhook-configuration.yaml
 ```
-For example there is DEPLOYMENT file:
+Apply hasher annotation:
+```
+kubectl apply -f manifests/hasher/service-account-hasher.yaml
+kubectl apply -f manifests/hasher/configMap.yaml
+```
+
+For example there is manifests/hasher/test-nginx-deploy.yaml DEPLOYMENT files:
 ```
 kubectl apply -f manifests/hasher/test-nginx-deploy.yaml
 ```
+##Pay attention!
+If you want to use a hasher-webhook-injector-sidecar, then you need to specify the following data in your deployment:
++ `spec:template:metadata:labels:hasher-webhook-injector-sidecar: "true"`
++ `hasher-webhook-process-name: "your main process name"`
 
 ___________________________
 ### :notebook_with_decorative_cover: Godoc extracts and generates documentation for Go programs

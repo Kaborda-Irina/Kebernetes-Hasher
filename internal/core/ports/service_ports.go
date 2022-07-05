@@ -2,22 +2,21 @@ package ports
 
 import (
 	"context"
-	"os"
-	"sync"
-	"time"
-
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/pkg/api"
 	"github.com/sirupsen/logrus"
+	"os"
+	"sync"
 )
 
 //go:generate mockgen -source=service_ports.go -destination=mocks/mock_service.go
 
 type IAppService interface {
-	CheckIsEmptyDB(kuberData models.KuberData) bool
-	Start(ctx context.Context, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error
-	Check(ctx context.Context, ticker *time.Ticker, flagName string, jobs chan string, results chan api.HashData, sig chan os.Signal) error
-	RolloutDeployment()
+	GetPID(configData models.ConfigMapData) (int, error)
+	IsExistDeploymentNameInDB(deploymentName string) bool
+	LaunchHasher(ctx context.Context, dirPath string, sig chan os.Signal) []api.HashData
+	Start(ctx context.Context, dirPath string, sig chan os.Signal, deploymentData models.DeploymentData) error
+	Check(ctx context.Context, dirPath string, sig chan os.Signal, deploymentData models.DeploymentData, kuberData models.KuberData) error
 }
 
 type IHashService interface {
@@ -31,7 +30,9 @@ type IHashService interface {
 }
 
 type IKuberService interface {
-	ConnectionToKuberAPI() (models.KuberData, error)
-	GetDataFromKuberAPI(kuberData models.KuberData) (models.DeploymentData, error)
+	GetDataFromK8sAPI() (models.KuberData, models.DeploymentData, models.ConfigMapData, error)
+	ConnectionToK8sAPI() (models.KuberData, error)
+	GetDataFromDeployment(kuberData models.KuberData) (models.DeploymentData, error)
+	GetDataFromConfigMap(kuberData models.KuberData, label string) (models.ConfigMapData, error)
 	RolloutDeployment(kuberData models.KuberData) error
 }

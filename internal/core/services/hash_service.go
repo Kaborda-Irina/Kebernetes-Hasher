@@ -156,11 +156,6 @@ func matchwithDataDB(hashSumFromDB []models.HashDataFromDB, currentHashData []ap
 						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.ImageContainer, deploymentData.Image)
 					return true
 				}
-				if dataFromDB.NamePod != deploymentData.NamePod {
-					fmt.Printf("Changed name pod: file - %s the path %s, old name pod %s, new name pod %s\n",
-						dataFromDB.FileName, dataFromDB.FullFilePath, dataFromDB.NamePod, deploymentData.NamePod)
-					return true
-				}
 				trigger = true
 				break
 			}
@@ -182,7 +177,7 @@ func matchWithDataCurrent(currentHashData []api.HashData, hashDataFromDB []model
 
 	for _, dataCurrent := range currentHashData {
 		if _, ok := dataFromDB[dataCurrent.FullFilePath]; !ok {
-			fmt.Printf("Added: file - %s the path %s hash sum %s\n",
+			fmt.Printf("Changed: the current data is different from the data in the database, current file - %s the path %s hash sum %s\n",
 				dataCurrent.FileName, dataCurrent.FullFilePath, dataCurrent.Hash)
 			return true
 		}

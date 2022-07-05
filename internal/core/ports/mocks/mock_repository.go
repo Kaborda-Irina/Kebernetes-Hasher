@@ -39,7 +39,7 @@ func (m *MockIAppRepository) EXPECT() *MockIAppRepositoryMockRecorder {
 // CheckIsEmptyDB mocks base method.
 func (m *MockIAppRepository) CheckIsEmptyDB(kuberData models.KuberData) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckIsEmptyDB", kuberData)
+	ret := m.ctrl.Call(m, "IsExistDeploymentNameInDB", kuberData)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -48,7 +48,7 @@ func (m *MockIAppRepository) CheckIsEmptyDB(kuberData models.KuberData) (bool, e
 // CheckIsEmptyDB indicates an expected call of CheckIsEmptyDB.
 func (mr *MockIAppRepositoryMockRecorder) CheckIsEmptyDB(kuberData interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIsEmptyDB", reflect.TypeOf((*MockIAppRepository)(nil).CheckIsEmptyDB), kuberData)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsExistDeploymentNameInDB", reflect.TypeOf((*MockIAppRepository)(nil).CheckIsEmptyDB), kuberData)
 }
 
 // MockIHashRepository is a mock of IHashRepository interface.

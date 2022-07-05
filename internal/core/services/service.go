@@ -1,8 +1,12 @@
 package services
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/Kaborda-Irina/Kubernetes-Hasher/internal/core/models"
@@ -36,6 +40,49 @@ func NewAppService(r *repositories.AppRepository, algorithm string, logger *logr
 	}, nil
 }
 
+//GetPID getting pid by process name
+func (as *AppService) GetPID(configData models.ConfigMapData) (int, error) {
+	if os.Chdir(os.Getenv("PROC_DIR")) != nil {
+		fmt.Println("/proc unavailable.")
+		os.Exit(1)
+	}
+
+	files, err := ioutil.ReadDir(".")
+	if err != nil {
+		fmt.Println("unable to read /proc directory.")
+	}
+	var pid int
+	for _, file := range files {
+		if !file.IsDir() {
+			return 0, err
+		}
+
+		// Our directory name should convert to integer if it's a PID
+		pid, err = strconv.Atoi(file.Name())
+		if err != nil {
+			return 0, err
+		}
+
+		// Open the /proc/xxx/stat file to read the name
+		f, err := os.Open(file.Name() + "/stat")
+		if err != nil {
+			fmt.Println("unable to open", file.Name())
+		}
+		defer f.Close()
+
+		r := bufio.NewReader(f)
+		scanner := bufio.NewScanner(r)
+		scanner.Split(bufio.ScanWords)
+		for scanner.Scan() {
+			if strings.Contains(scanner.Text(), configData.ProcName) {
+				return pid, nil
+			}
+		}
+	}
+
+	return pid, nil
+}
+
 //LaunchHasher takes a path to a directory and returns HashData
 func (as *AppService) LaunchHasher(ctx context.Context, dirPath string, sig chan os.Signal) []api.HashData {
 	jobs := make(chan string)
@@ -47,9 +94,9 @@ func (as *AppService) LaunchHasher(ctx context.Context, dirPath string, sig chan
 	return allHashData
 }
 
-//CheckIsEmptyDB checks if the database is empty
-func (as *AppService) CheckIsEmptyDB(kuberData models.KuberData) bool {
-	isEmptyDB, err := as.IAppRepository.CheckIsEmptyDB(kuberData)
+//IsExistDeploymentNameInDB checks if the database is empty
+func (as *AppService) IsExistDeploymentNameInDB(deploymentName string) bool {
+	isEmptyDB, err := as.IAppRepository.IsExistDeploymentNameInDB(deploymentName)
 	if err != nil {
 		as.logger.Fatalf("database check error %s", err)
 	}
@@ -57,14 +104,9 @@ func (as *AppService) CheckIsEmptyDB(kuberData models.KuberData) bool {
 }
 
 // StartGetHashData getting the hash sum of all files, outputs to os.Stdout and saves to the database
-func (as *AppService) Start(ctx context.Context, dirPath string, sig chan os.Signal, kuberData models.KuberData) error {
+func (as *AppService) Start(ctx context.Context, dirPath string, sig chan os.Signal, deploymentData models.DeploymentData) error {
 	allHashData := as.LaunchHasher(ctx, dirPath, sig)
-	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
-	if err != nil {
-		as.logger.Error("Error get data from kuberAPI ", err)
-		return err
-	}
-	err = as.IHashService.SaveHashData(ctx, allHashData, deploymentData)
+	err := as.IHashService.SaveHashData(ctx, allHashData, deploymentData)
 	if err != nil {
 		as.logger.Error("Error save hash data to database ", err)
 		return err
@@ -74,20 +116,16 @@ func (as *AppService) Start(ctx context.Context, dirPath string, sig chan os.Sig
 }
 
 // StartCheckHashData getting the hash sum of all files, matches them and outputs to os.Stdout changes
-func (as *AppService) Check(ctx context.Context, dirPath string, sig chan os.Signal, kuberData models.KuberData) error {
-	allHashDataCurrent := as.LaunchHasher(ctx, dirPath, sig)
-	deploymentData, err := as.GetDataFromKuberAPI(kuberData)
-	if err != nil {
-		as.logger.Error("Error get data from kuberAPI ", err)
-		return err
-	}
-	allHashDataFromDB, err := as.IHashService.GetHashData(ctx, dirPath, deploymentData)
+func (as *AppService) Check(ctx context.Context, dirPath string, sig chan os.Signal, deploymentData models.DeploymentData, kuberData models.KuberData) error {
+	hashDataCurrentByDirPath := as.LaunchHasher(ctx, dirPath, sig)
+
+	dataFromDBbyPodName, err := as.IHashService.GetHashData(ctx, dirPath, deploymentData)
 	if err != nil {
 		as.logger.Error("Error getting hash data from database ", err)
 		return err
 	}
 
-	isDataChanged, err := as.IHashService.IsDataChanged(allHashDataCurrent, allHashDataFromDB, deploymentData)
+	isDataChanged, err := as.IHashService.IsDataChanged(hashDataCurrentByDirPath, dataFromDBbyPodName, deploymentData)
 	if err != nil {
 		as.logger.Error("Error match data currently and data from database ", err)
 		return err
