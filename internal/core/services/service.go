@@ -41,7 +41,7 @@ func NewAppService(r *repositories.AppRepository, algorithm string, logger *logr
 }
 
 //GetPID getting pid by process name
-func (as *AppService) GetPID(confirData models.ConfigMapData) (int, error) {
+func (as *AppService) GetPID(configData models.ConfigMapData) (int, error) {
 	if os.Chdir(os.Getenv("PROC_DIR")) != nil {
 		fmt.Println("/proc unavailable.")
 		os.Exit(1)
@@ -74,7 +74,7 @@ func (as *AppService) GetPID(confirData models.ConfigMapData) (int, error) {
 		scanner := bufio.NewScanner(r)
 		scanner.Split(bufio.ScanWords)
 		for scanner.Scan() {
-			if strings.Contains(scanner.Text(), confirData.ProcName) {
+			if strings.Contains(scanner.Text(), configData.ProcName) {
 				return pid, nil
 			}
 		}
